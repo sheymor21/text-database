@@ -19,11 +19,14 @@ var database struct {
 }
 
 func createFile(databaseName string) {
+
 	database.name = databaseName
-	if utilities.IsFileExist(databaseName) {
-		log.Println(fmt.Sprintf("Already exists %s", databaseName))
-		return
+	if !utilities.IsFileExist(databaseName) {
+		initData := utilities.Must(os.ReadFile("layout.txt"))
+
+		utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
 	}
+	log.Println(fmt.Sprintf("Already exists %s", databaseName))
 
 	initData := utilities.Must(os.ReadFile(databaseName))
 
