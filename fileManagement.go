@@ -28,9 +28,6 @@ func createFile(databaseName string) {
 	}
 	log.Println(fmt.Sprintf("Already exists %s", databaseName))
 
-	initData := utilities.Must(os.ReadFile(databaseName))
-
-	utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
 }
 func addValue(table string, column string, value string) {
 	tableName := getTableName(table)
@@ -177,4 +174,88 @@ func getColumns(table string) []string {
 	columns := strings.Split(table, "\n")[2]
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
+}
+func updateTableName(table string, newName string) {
+	tables := getTables()
+	tableName := getTableName(table)
+	formatName := strings.Replace(tableName, "-----", "", 2)
+	formatName = formatName + "_End"
+	formatName = fmt.Sprintf("-----%s-----", formatName)
+	rawNewName := fmt.Sprintf("-----%s-----", newName)
+	rawNewNameEnd := fmt.Sprintf("-----%s-----", newName+"_End")
+	for i, t := range tables {
+		if strings.Contains(t, tableName) {
+			t = strings.Replace(t, tableName, rawNewName, 1)
+			t = strings.Replace(t, formatName, rawNewNameEnd, 1)
+			tables[i] = t
+			break
+		}
+	}
+	newTable := addTableFrontiers(tables)
+	utilities.ErrorHandler(os.WriteFile(database.name, []byte(newTable), 0666))
+}
+func updateColumnName(table string, oldColumnName string, newColumnName string) {
+	tables := getTables()
+	columns := getColumns(table)
+	for i, t := range tables {
+		if strings.Contains(t, table) {
+			for j, c := range columns {
+				if c == oldColumnName {
+					columns[j] = newColumnName
+				}
+			}
+			t = strings.Replace(t, oldColumnName, newColumnName, 1)
+			tables[i] = t
+		}
+	}
+
+	newTable := addTableFrontiers(tables)
+	utilities.ErrorHandler(os.WriteFile(database.name, []byte(newTable), 0666))
+
+}
+func updateValue(table string, column string, id string, newValue string) {
+	tables := getTables()
+	columns := getColumns(table)
+	for i, t := range tables {
+		if strings.Contains(t, table) {
+			for n, c := range columns {
+				if c == column {
+					row := getRow(t, id)
+					rowSlice := strings.Split(row, "|")
+					rowSlice[n+1] = newValue
+					row = strings.Join(rowSlice, "|")
+					newTableWithNewRow := updateRow(t, id, row)
+					tables[i] = newTableWithNewRow
+				}
+			}
+		}
+	}
+	newTable := addTableFrontiers(tables)
+	utilities.ErrorHandler(os.WriteFile(database.name, []byte(newTable), 0666))
+}
+func getRow(table string, id string) string {
+	row := strings.Split(table, "\n")
+	for i, r := range row {
+		if i >= 3 {
+			s := strings.Split(r, "|")
+			if s[2] == id {
+				return r
+			}
+		}
+	}
+	return ""
+}
+
+func updateRow(table string, id string, newRow string) string {
+	row := strings.Split(table, "\n")
+	for i, r := range row {
+		if i >= 3 {
+			s := strings.Split(r, "|")
+			if s[2] == id {
+				row[i] = newRow
+				break
+			}
+		}
+	}
+	return strings.Join(row, "\n")
 }
