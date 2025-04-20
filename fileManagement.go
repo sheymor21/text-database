@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"os"
+	"slices"
 	"strings"
 	"text-database/utilities"
 )
@@ -62,7 +63,7 @@ func getTable(tableName string) string {
 
 	for _, t := range tables {
 		if strings.Contains(t, tableNameRaw) {
-			return strings.Replace(t, "U+0020", " ", 1)
+			return t
 		}
 
 	}
@@ -245,7 +246,6 @@ func getRow(table string, id string) string {
 	}
 	return ""
 }
-
 func updateRow(table string, id string, newRow string) string {
 	row := strings.Split(table, "\n")
 	for i, r := range row {
