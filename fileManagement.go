@@ -144,7 +144,7 @@ func valuesBuilder(table string, values []string) string {
 			if n > count {
 				break
 			}
-			co[n] = strings.ReplaceAll(v, " ", "u+0020")
+			co[n] = strings.ReplaceAll(v, " ", "U+0020")
 			co[n2] = strings.ReplaceAll(co[n2], "[", "|")
 			co[n2] = strings.ReplaceAll(co[n2], "]", "|")
 			n = n + 2
@@ -153,7 +153,7 @@ func valuesBuilder(table string, values []string) string {
 		}
 	}
 	co = append(co, "\n!*!")
-	return strings.Join(co, "")
+	return strings.Join(co, " ")
 }
 func addTableFrontiers(tables []string) string {
 	tables = append(tables, "////")
