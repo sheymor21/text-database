@@ -156,15 +156,10 @@ func valuesBuilder(table string, values []string) string {
 	return strings.Join(co, "")
 }
 func addTableFrontiers(tables []string) string {
-	newTables := make([]string, (len(tables)*2)+1)
-	newTables[0] = "////"
-	i := 1
-	for _, t := range tables {
-		newTables[i] = t
-		newTables[i+1] = "////"
-		i = i + 2
-	}
-	return strings.Join(newTables, "")
+	tables = append(tables, "////")
+	slices.Reverse(tables)
+	tables = append(tables, "////")
+	return strings.Join(tables, "")
 }
 func getTableName(table string) string {
 	tableName := strings.Split(table, "-----")[1]
