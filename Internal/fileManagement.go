@@ -1,4 +1,4 @@
-package main
+package Internal
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"text-database/utilities"
+	"text-database/Internal/utilities"
 )
 
 type table struct {
@@ -19,15 +19,16 @@ var database struct {
 	name string
 }
 
-func createFile(databaseName string) {
+func CreateFile(databaseName string) {
 
 	database.name = databaseName
 	if !utilities.IsFileExist(databaseName) {
-		initData := utilities.Must(os.ReadFile("layout.txt"))
-
+		initData := utilities.Must(os.ReadFile("internal/layout.txt"))
 		utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
+	} else {
+
+		log.Println(fmt.Sprintf("Already exists %s", databaseName))
 	}
-	log.Println(fmt.Sprintf("Already exists %s", databaseName))
 
 }
 func addValue(table string, column string, value string) {
