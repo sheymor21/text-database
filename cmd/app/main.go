@@ -1,7 +1,9 @@
 package main
 
-import "text-database/Internal"
+import (
+	"text-database/pkg"
+)
 
 func main() {
-	Internal.CreateFile("database.txt")
+	pkg.CreateDatabase("database.txt")
 }
