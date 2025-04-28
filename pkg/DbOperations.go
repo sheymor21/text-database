@@ -15,18 +15,19 @@ type Table interface {
 	UpdateTableName(newName string)
 	UpdateColumnName(oldColumnName string, newColumnName string)
 	UpdateValue(columnName string, id string, newValue string)
-	DeleteTable()
 	DeleteRow(id string)
 	DeleteColumn(columnName string)
 	GetRow(id string) string
 	PrintTable()
+	GetName() string
 }
 type Db interface {
 	GetName() string
 	GetTables() []Table
 	GetTableByName(name string) Table
-	AddTable(table table)
 	PrintTables()
+	NewTable(name string, columns []string) Table
+	DeleteTable(tableName string)
 }
 type table struct {
 	name     string
@@ -56,6 +57,11 @@ func (d db) PrintTables() {
 		fmt.Println(t.rawTable)
 	}
 }
+func (d db) NewTable(name string, columns []string) Table {
+	t := &table{name, columns, "", ""}
+	tb := d.addTable(*t)
+	return tb
+}
 
 var dbName string
 
@@ -66,7 +72,10 @@ func CreateDatabase(databaseName string) Db {
 
 	dbName = databaseName
 	if !utilities.IsFileExist(databaseName) {
-		initData := utilities.Must(os.ReadFile("internal/layout.txt"))
+		initData, err := os.ReadFile("internal/layout.txt")
+		if err != nil {
+			initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
+		}
 		utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
 	}
 	return db{}
@@ -87,6 +96,9 @@ func (table table) AddValue(column string, value string) {
 }
 func (table table) PrintTable() {
 	fmt.Println(table.rawTable)
+}
+func (table table) GetName() string {
+	return table.name
 }
 func (table table) AddValues(values []string) {
 	tables := getTables()
@@ -126,11 +138,12 @@ func getTables() []table {
 	}
 	return tables
 }
-func (d db) AddTable(table table) {
+func (d db) addTable(table table) Table {
 	data := utilities.Must(os.ReadFile(dbName))
 	raw := tableBuilder(table)
 	data = append(data, []byte(raw)...)
 	utilities.ErrorHandler(os.WriteFile(dbName, data, 0666))
+	return d.GetTableByName(table.name)
 }
 func tableBuilder(table table) string {
 	columnsRaw := columnsBuilder(table.columns)
@@ -300,10 +313,11 @@ func updateRow(table string, id string, newRow string) string {
 	}
 	return strings.Join(row, "\n")
 }
-func (table table) DeleteTable() {
+func (d db) DeleteTable(tableName string) {
 	tables := getTables()
+	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 	for i, t := range tables {
-		if t.name == table.name {
+		if t.name == tableNameRaw {
 			tables = slices.Delete(tables, i, i+1)
 		}
 	}
