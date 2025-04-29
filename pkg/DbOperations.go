@@ -10,14 +10,16 @@ import (
 )
 
 type Table interface {
-	AddValue(column string, value string)
-	AddValues(values []string)
-	UpdateTableName(newName string)
-	UpdateColumnName(oldColumnName string, newColumnName string)
-	UpdateValue(columnName string, id string, newValue string)
-	DeleteRow(id string)
-	DeleteColumn(columnName string)
-	GetRow(id string) string
+	AddValue(column string, value string) Table
+	AddValues(values []string) Table
+	UpdateTableName(newName string) Table
+	UpdateColumnName(oldColumnName string, newColumnName string) Table
+	UpdateValue(columnName string, id string, newValue string) Table
+	DeleteRow(id string) Table
+	DeleteColumn(columnName string) Table
+	GetRowById(id string) string
+	GetRows() []string
+	GetColumns() []string
 	PrintTable()
 	GetName() string
 }
@@ -78,21 +80,23 @@ func CreateDatabase(databaseName string) Db {
 		}
 		utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
 	}
-	return db{}
+	return db{name: databaseName, tables: getTables()}
 
 }
-func (table table) AddValue(column string, value string) {
+func (table table) AddValue(column string, value string) Table {
 	tables := getTables()
+	s := valueBuilder(table, column, value)
+	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
+
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
-			s := valueBuilder(t, column, value)
-			t.rawTable = strings.Replace(t.rawTable, "!*!", s, 1)
-			tables[i] = t
+			tables[i] = table
 			break
 		}
 	}
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	return table
 }
 func (table table) PrintTable() {
 	fmt.Println(table.rawTable)
@@ -100,17 +104,21 @@ func (table table) PrintTable() {
 func (table table) GetName() string {
 	return table.name
 }
-func (table table) AddValues(values []string) {
+func (table table) AddValues(values []string) Table {
+	s := valuesBuilder(table.rawTable, values)
+	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
 	tables := getTables()
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
-			s := valuesBuilder(table.rawTable, values)
-			t.rawTable = strings.Replace(t.rawTable, "!*!", s, 1)
-			tables[i] = t
+			tables[i] = table
 			break
 		}
 	}
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(addTableFrontiers(tables)), 0666))
+	return table
+}
+func (table table) GetColumns() []string {
+	return getColumns(table.rawTable)
 }
 func getTable(tableName string) Table {
 	tables := getTables()
@@ -127,6 +135,7 @@ func getTable(tableName string) Table {
 func getTables() []table {
 	data := utilities.Must(os.ReadFile(dbName))
 	dataString := string(data)
+	dataString = strings.ReplaceAll(dataString, "\r", "")
 	dataString = strings.ReplaceAll(dataString, "U+0020", " ")
 	s := strings.Split(dataString, "////")
 	sif := utilities.RemoveEmptyIndex(s)
@@ -234,62 +243,81 @@ func getColumns(rawTable string) []string {
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
 }
-func (table table) UpdateTableName(newName string) {
-	tables := getTables()
+func (table table) UpdateTableName(newName string) Table {
 	formatName := strings.Replace(table.name, "-----", "", 2)
 	formatName = formatName + "_End"
 	formatName = fmt.Sprintf("-----%s-----", formatName)
 	rawNewName := fmt.Sprintf("-----%s-----", newName)
 	rawNewNameEnd := fmt.Sprintf("-----%s-----", newName+"_End")
+
+	table.name = rawNewName
+	table.rawTable = strings.Replace(table.rawTable, table.name, rawNewName, 1)
+	table.rawTable = strings.Replace(table.rawTable, formatName, rawNewNameEnd, 1)
+	tables := getTables()
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
-			t.rawTable = strings.Replace(t.rawTable, table.name, rawNewName, 1)
-			t.rawTable = strings.Replace(t.rawTable, formatName, rawNewNameEnd, 1)
-			tables[i] = t
+			tables[i].name = table.name
+			tables[i] = table
 			break
 		}
 	}
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	return table
 }
-func (table table) UpdateColumnName(oldColumnName string, newColumnName string) {
+func (table table) UpdateColumnName(oldColumnName string, newColumnName string) Table {
 	tables := getTables()
+	for i, c := range table.columns {
+		if c == oldColumnName {
+			table.columns[i] = newColumnName
+		}
+	}
+
+	table.rawTable = strings.Replace(table.rawTable, oldColumnName, newColumnName, 1)
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
-			for j, c := range table.columns {
-				if c == oldColumnName {
-					table.columns[j] = newColumnName
-				}
-			}
-			t.rawTable = strings.Replace(t.rawTable, oldColumnName, newColumnName, 1)
-			tables[i] = t
+			tables[i] = table
+			break
 		}
 	}
 
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	return table
 
 }
-func (table table) UpdateValue(columnName string, id string, newValue string) {
+func (table table) UpdateValue(columnName string, id string, newValue string) Table {
+
+	for n := 3; n < len(table.columns); n += 2 {
+		if strings.TrimSpace(table.columns[n]) == columnName {
+			row := table.GetRowById(id)
+			rowSlice := strings.Split(row, "|")
+			rowSlice[n+1] = " " + newValue + " "
+			row = strings.Join(rowSlice, "|")
+			table.rawTable = updateRow(table.rawTable, id, row)
+		}
+	}
+
 	tables := getTables()
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
-			for n := 3; n < len(table.columns); n += 2 {
-				if table.columns[n] == columnName {
-					row := table.GetRow(id)
-					rowSlice := strings.Split(row, "|")
-					rowSlice[n+1] = " " + newValue + " "
-					row = strings.Join(rowSlice, "|")
-					newTableWithNewRow := updateRow(t.rawTable, id, row)
-					tables[i].rawTable = newTableWithNewRow
-				}
-			}
+			tables[i].rawTable = table.rawTable
 		}
 	}
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	return table
 }
-func (table table) GetRow(id string) string {
+func (table table) GetRows() []string {
+	rows := strings.Split(table.rawTable, "\n")
+	sRows := make([]string, len(rows)-3)
+
+	for i := 3; i < len(rows)-3; i++ {
+		sRows[i-3] = rows[i]
+	}
+	return utilities.RemoveEmptyIndex(sRows)
+}
+func (table table) GetRowById(id string) string {
 	row := strings.Split(table.rawTable, "\n")
 	for i, r := range row {
 		if i >= 3 {
@@ -325,26 +353,29 @@ func (d db) DeleteTable(tableName string) {
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
 }
-func (table table) DeleteRow(id string) {
+func (table table) DeleteRow(id string) Table {
+
+	row := table.GetRowById(id)
+	rowSlice := strings.Split(table.rawTable, "\n")
+	index := slices.Index(rowSlice, row)
+	newRow := slices.Replace(rowSlice, index, index+1, "")
+	newRow = utilities.RemoveEmptyIndex(newRow)
+	rowString := strings.Join(newRow, "\n")
+	table.rawTable = "\n" + rowString + "\n"
+
 	tables := getTables()
 	for i, t := range tables {
 		if t.name == table.name {
-			row := table.GetRow(id)
-			rowSlice := strings.Split(t.rawTable, "\n")
-			index := slices.Index(rowSlice, row)
-			newRow := slices.Replace(rowSlice, index, index+1, "")
-			newRow = utilities.RemoveEmptyIndex(newRow)
-			rowString := strings.Join(newRow, "\n")
-			tables[i].rawTable = "\n" + rowString + "\n"
+			tables[i] = table
 		}
 	}
 
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	return table
 }
-func (table table) DeleteColumn(columnName string) {
+func (table table) DeleteColumn(columnName string) Table {
 	tables := getTables()
-	var rawTable string
 	for n, c := range table.columns {
 		if c == columnName {
 			table.columns = slices.Delete(table.columns, n, n+1)
@@ -358,17 +389,18 @@ func (table table) DeleteColumn(columnName string) {
 			rawColumn := strings.Join(table.columns, " ")
 			newTable := strings.Split(table.rawTable, "\n")
 			newTable[2] = rawColumn
-			rawTable = strings.Join(newTable, "\n")
-			rawTable = deleteColumnData(rawTable, n)
+			table.rawTable = strings.Join(newTable, "\n")
+			table.rawTable = deleteColumnData(table.rawTable, n)
 		}
 	}
 	for i, t := range tables {
 		if t.name == table.name {
-			tables[i].rawTable = rawTable
+			tables[i] = table
 		}
 	}
 	tablesWithFrontier := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(tablesWithFrontier), 0666))
+	return table
 }
 func deleteColumnData(table string, columnIndex int) string {
 	tableSlice := strings.Split(table, "\n")
