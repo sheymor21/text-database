@@ -255,7 +255,7 @@ func (table table) UpdateTableName(newName string) Table {
 	table.rawTable = strings.Replace(table.rawTable, formatName, rawNewNameEnd, 1)
 	tables := getTables()
 	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
+		if t.name == table.name {
 			tables[i].name = table.name
 			tables[i] = table
 			break
@@ -270,12 +270,13 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 	for i, c := range table.columns {
 		if c == oldColumnName {
 			table.columns[i] = newColumnName
+			break
 		}
 	}
 
 	table.rawTable = strings.Replace(table.rawTable, oldColumnName, newColumnName, 1)
 	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
+		if t.name == table.name {
 			tables[i] = table
 			break
 		}
@@ -288,20 +289,22 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 }
 func (table table) UpdateValue(columnName string, id string, newValue string) Table {
 
-	for n := 3; n < len(table.columns); n += 2 {
-		if strings.TrimSpace(table.columns[n]) == columnName {
+	for i := 3; i < len(table.columns); i += 2 {
+		if strings.TrimSpace(table.columns[i]) == columnName {
 			row := table.GetRowById(id)
 			rowSlice := strings.Split(row, "|")
-			rowSlice[n+1] = " " + newValue + " "
+			rowSlice[i+1] = " " + newValue + " "
 			row = strings.Join(rowSlice, "|")
 			table.rawTable = updateRow(table.rawTable, id, row)
+			break
 		}
 	}
 
 	tables := getTables()
 	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
+		if t.name == table.name {
 			tables[i].rawTable = table.rawTable
+			break
 		}
 	}
 	newTable := addTableFrontiers(tables)
@@ -319,13 +322,10 @@ func (table table) GetRows() []string {
 }
 func (table table) GetRowById(id string) string {
 	row := strings.Split(table.rawTable, "\n")
-	for i, r := range row {
-		if i >= 3 {
-			s := strings.Split(r, "|")
-
-			if strings.TrimSpace(s[2]) == id {
-				return r
-			}
+	for i := 3; i < len(row); i++ {
+		s := strings.Split(row[i], "|")
+		if strings.TrimSpace(s[2]) == id {
+			return row[i]
 		}
 	}
 	return ""
@@ -347,6 +347,7 @@ func (d db) DeleteTable(tableName string) {
 	for i, t := range tables {
 		if t.name == tableNameRaw {
 			tables = slices.Delete(tables, i, i+1)
+			break
 		}
 	}
 
@@ -367,6 +368,7 @@ func (table table) DeleteRow(id string) Table {
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i] = table
+			break
 		}
 	}
 
@@ -375,7 +377,6 @@ func (table table) DeleteRow(id string) Table {
 	return table
 }
 func (table table) DeleteColumn(columnName string) Table {
-	tables := getTables()
 	for n, c := range table.columns {
 		if c == columnName {
 			table.columns = slices.Delete(table.columns, n, n+1)
@@ -391,11 +392,14 @@ func (table table) DeleteColumn(columnName string) Table {
 			newTable[2] = rawColumn
 			table.rawTable = strings.Join(newTable, "\n")
 			table.rawTable = deleteColumnData(table.rawTable, n)
+			break
 		}
 	}
+	tables := getTables()
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i] = table
+			break
 		}
 	}
 	tablesWithFrontier := addTableFrontiers(tables)
@@ -405,21 +409,19 @@ func (table table) DeleteColumn(columnName string) Table {
 func deleteColumnData(table string, columnIndex int) string {
 	tableSlice := strings.Split(table, "\n")
 	length := len(tableSlice)
-	for i, _ := range tableSlice {
-		if i > 2 && i < length-3 {
-			columns := strings.Split(tableSlice[i], " ")
+	for i := 3; i < length-3; i++ {
+		columns := strings.Split(tableSlice[i], " ")
+		columns = slices.Delete(columns, columnIndex, columnIndex+1)
+		position := fmt.Sprintf("|%d|", columnIndex-1)
+		columns = slices.Replace(columns, columnIndex-1, columnIndex, position)
+		if columnIndex < len(columns) {
+
 			columns = slices.Delete(columns, columnIndex, columnIndex+1)
-			position := fmt.Sprintf("|%d|", columnIndex-1)
-			columns = slices.Replace(columns, columnIndex-1, columnIndex, position)
-			if columnIndex < len(columns) {
+		} else {
 
-				columns = slices.Delete(columns, columnIndex, columnIndex+1)
-			} else {
-
-				columns = slices.Delete(columns, columnIndex-1, columnIndex)
-			}
-			tableSlice[i] = strings.Join(columns, " ")
+			columns = slices.Delete(columns, columnIndex-1, columnIndex)
 		}
+		tableSlice[i] = strings.Join(columns, " ")
 	}
 	return strings.Join(tableSlice, "\n")
 }
