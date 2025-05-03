@@ -3,7 +3,7 @@ package utilities
 import "log"
 
 type generic interface {
-	[]byte | string
+	[]byte | string | interface{}
 }
 
 func Must[T generic](data T, err error) T {

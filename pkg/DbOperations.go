@@ -10,14 +10,14 @@ import (
 )
 
 type Table interface {
-	AddValue(column string, value string) Table
+	AddValue(column string, value string) (Table, error)
 	AddValues(values []string) Table
 	UpdateTableName(newName string) Table
-	UpdateColumnName(oldColumnName string, newColumnName string) Table
-	UpdateValue(columnName string, id string, newValue string) Table
-	DeleteRow(id string) Table
-	DeleteColumn(columnName string) Table
-	GetRowById(id string) string
+	UpdateColumnName(oldColumnName string, newColumnName string) (Table, error)
+	UpdateValue(columnName string, id string, newValue string) (Table, error)
+	DeleteRow(id string) (Table, error)
+	DeleteColumn(columnName string) (Table, error)
+	GetRowById(id string) (string, error)
 	GetRows() []string
 	GetColumns() []string
 	PrintTable()
@@ -26,7 +26,7 @@ type Table interface {
 type Db interface {
 	GetName() string
 	GetTables() []Table
-	GetTableByName(name string) Table
+	GetTableByName(name string) (Table, error)
 	PrintTables()
 	NewTable(name string, columns []string) Table
 	DeleteTable(tableName string)
@@ -67,8 +67,8 @@ func (d db) NewTable(name string, columns []string) Table {
 
 var dbName string
 
-func (d db) GetTableByName(name string) Table {
-	return getTable(name)
+func (d db) GetTableByName(name string) (Table, error) {
+	return getTableByName(name)
 }
 func CreateDatabase(databaseName string) Db {
 
@@ -83,11 +83,14 @@ func CreateDatabase(databaseName string) Db {
 	return db{name: databaseName, tables: getTables()}
 
 }
-func (table table) AddValue(column string, value string) Table {
+func (table table) AddValue(column string, value string) (Table, error) {
 	tables := getTables()
-	s := valueBuilder(table, column, value)
-	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
+	s, err := valueBuilder(table, column, value)
+	if err != nil {
+		return nil, err
+	}
 
+	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
 			tables[i] = table
@@ -96,7 +99,7 @@ func (table table) AddValue(column string, value string) Table {
 	}
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
-	return table
+	return table, nil
 }
 func (table table) PrintTable() {
 	fmt.Println(table.rawTable)
@@ -120,17 +123,17 @@ func (table table) AddValues(values []string) Table {
 func (table table) GetColumns() []string {
 	return getColumns(table.rawTable)
 }
-func getTable(tableName string) Table {
+func getTableByName(tableName string) (table, error) {
 	tables := getTables()
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 
 	for _, t := range tables {
 		if strings.Contains(t.rawTable, tableNameRaw) {
-			return t
+			return t, nil
 		}
 
 	}
-	return nil
+	return table{}, &NotFoundError{itemName: "Table"}
 }
 func getTables() []table {
 	data := utilities.Must(os.ReadFile(dbName))
@@ -152,7 +155,8 @@ func (d db) addTable(table table) Table {
 	raw := tableBuilder(table)
 	data = append(data, []byte(raw)...)
 	utilities.ErrorHandler(os.WriteFile(dbName, data, 0666))
-	return d.GetTableByName(table.name)
+	return utilities.Must(d.GetTableByName(table.name))
+
 }
 func tableBuilder(table table) string {
 	columnsRaw := columnsBuilder(table.columns)
@@ -176,9 +180,12 @@ func columnsBuilder(columns []string) string {
 	}
 	return stringBuilder.String()
 }
-func valueBuilder(table table, columnName string, value string) string {
+func valueBuilder(table table, columnName string, value string) (string, error) {
 	co := getColumns(table.rawTable)
 	co = utilities.RemoveEmptyIndex(co)
+	if !slices.Contains(co, columnName) {
+		return "", &NotFoundError{itemName: "Column"}
+	}
 	count := len(co)
 	co[0] = "[1]"
 	co[1] = " " + uuid.New().String() + " "
@@ -197,7 +204,7 @@ func valueBuilder(table table, columnName string, value string) string {
 		}
 	}
 	co = append(co, "\n!*!")
-	return strings.Join(co, "")
+	return strings.Join(co, ""), nil
 }
 func valuesBuilder(table string, values []string) string {
 	co := getColumns(table)
@@ -265,7 +272,10 @@ func (table table) UpdateTableName(newName string) Table {
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
 	return table
 }
-func (table table) UpdateColumnName(oldColumnName string, newColumnName string) Table {
+func (table table) UpdateColumnName(oldColumnName string, newColumnName string) (Table, error) {
+	if !slices.Contains(table.columns, oldColumnName) {
+		return nil, &NotFoundError{itemName: "Column"}
+	}
 	tables := getTables()
 	for i, c := range table.columns {
 		if c == oldColumnName {
@@ -284,18 +294,28 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
-	return table
+	return table, nil
 
 }
-func (table table) UpdateValue(columnName string, id string, newValue string) Table {
+func (table table) UpdateValue(columnName string, id string, newValue string) (Table, error) {
 
+	if !slices.Contains(table.columns, columnName) {
+		return nil, &NotFoundError{itemName: "Column"}
+	}
 	for i := 3; i < len(table.columns); i += 2 {
 		if strings.TrimSpace(table.columns[i]) == columnName {
-			row := table.GetRowById(id)
+			row, rowErr := table.GetRowById(id)
+			if rowErr != nil {
+				return nil, rowErr
+			}
 			rowSlice := strings.Split(row, "|")
 			rowSlice[i+1] = " " + newValue + " "
 			row = strings.Join(rowSlice, "|")
-			table.rawTable = updateRow(table.rawTable, id, row)
+			updateTable, err := updateRow(table.rawTable, id, row)
+			if err != nil {
+				return nil, err
+			}
+			table.rawTable = updateTable
 			break
 		}
 	}
@@ -309,7 +329,7 @@ func (table table) UpdateValue(columnName string, id string, newValue string) Ta
 	}
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
-	return table
+	return table, nil
 }
 func (table table) GetRows() []string {
 	rows := strings.Split(table.rawTable, "\n")
@@ -320,26 +340,31 @@ func (table table) GetRows() []string {
 	}
 	return utilities.RemoveEmptyIndex(sRows)
 }
-func (table table) GetRowById(id string) string {
+func (table table) GetRowById(id string) (string, error) {
 	row := strings.Split(table.rawTable, "\n")
 	for i := 3; i < len(row); i++ {
 		s := strings.Split(row[i], "|")
 		if strings.TrimSpace(s[2]) == id {
-			return row[i]
+			return row[i], nil
 		}
 	}
-	return ""
+	return "", &NotFoundError{itemName: "Row"}
 }
-func updateRow(table string, id string, newRow string) string {
+func updateRow(table string, id string, newRow string) (string, error) {
 	row := strings.Split(table, "\n")
+	idExist := false
 	for i := 3; i < len(row); i++ {
 		s := strings.Split(row[i], "|")
 		if strings.TrimSpace(s[2]) == id {
 			row[i] = newRow
+			idExist = true
 			break
 		}
 	}
-	return strings.Join(row, "\n")
+	if !idExist {
+		return "", &NotFoundError{itemName: "Id"}
+	}
+	return strings.Join(row, "\n"), nil
 }
 func (d db) DeleteTable(tableName string) {
 	tables := getTables()
@@ -354,9 +379,12 @@ func (d db) DeleteTable(tableName string) {
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
 }
-func (table table) DeleteRow(id string) Table {
+func (table table) DeleteRow(id string) (Table, error) {
 
-	row := table.GetRowById(id)
+	row, err := table.GetRowById(id)
+	if err != nil {
+		return nil, err
+	}
 	rowSlice := strings.Split(table.rawTable, "\n")
 	index := slices.Index(rowSlice, row)
 	newRow := slices.Replace(rowSlice, index, index+1, "")
@@ -374,9 +402,12 @@ func (table table) DeleteRow(id string) Table {
 
 	newTable := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
-	return table
+	return table, nil
 }
-func (table table) DeleteColumn(columnName string) Table {
+func (table table) DeleteColumn(columnName string) (Table, error) {
+	if !slices.Contains(table.columns, columnName) {
+		return nil, &NotFoundError{itemName: "Column"}
+	}
 	for n, c := range table.columns {
 		if c == columnName {
 			table.columns = slices.Delete(table.columns, n, n+1)
@@ -404,7 +435,7 @@ func (table table) DeleteColumn(columnName string) Table {
 	}
 	tablesWithFrontier := addTableFrontiers(tables)
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(tablesWithFrontier), 0666))
-	return table
+	return table, nil
 }
 func deleteColumnData(table string, columnIndex int) string {
 	tableSlice := strings.Split(table, "\n")
