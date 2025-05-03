@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/suite"
-	"reflect"
 	"strings"
 	"testing"
 	"text-database/pkg"
@@ -84,11 +83,61 @@ func (s *tableSuite) TestDeleteColumn() {
 		s.Fail("Expected [1] id [2] name", fmt.Sprintf("Recibe: %s", columns))
 	}
 }
-func (s *tableSuite) TestGetTableByNameError() {
-	_, err := s.db.GetTableByName("test")
+func (s *tableSuite) TestAddValue_ReturnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.AddValue("test", "value")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
-		s.Fail(fmt.Sprintf("Expected %s", reflect.TypeOf(&pkg.NotFoundError{})), fmt.Sprintf("Recibe: %s", reflect.TypeOf(example)))
+		s.ErrFail(err)
+	}
+}
+func (s *tableSuite) TestUpdateColumnName_ReturnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.UpdateColumnName("test", "value")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
+func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.UpdateValue("test", "value", "value")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
+
+func (s *tableSuite) TestUpdateValue_ReturnIdError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.UpdateValue("name", "test", "value")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
+func (s *tableSuite) TestDeleteRow_ReturnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.DeleteRow("test")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
+func (s *tableSuite) TestDeleteColumn_ReturnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.DeleteColumn("test")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
+func (s *tableSuite) TestGetRowById_ReturnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	_, err := tb.GetRowById("test")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
 	}
 }
 func TestTables(t *testing.T) {

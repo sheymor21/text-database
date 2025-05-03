@@ -1,9 +1,11 @@
 package Test
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/suite"
 	"testing"
+	"text-database/pkg"
 	"text-database/pkg/utilities"
 )
 
@@ -39,6 +41,13 @@ func (s *databaseSuite) TestGetTableByName() {
 	if tb.GetName() != "-----Users-----" {
 		s.Fail("Expected Users Table", fmt.Sprintf("Recibe: %s", tb))
 
+	}
+}
+func (s *databaseSuite) TestGetTableByNameError() {
+	_, err := s.db.GetTableByName("test")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
 	}
 }
 
