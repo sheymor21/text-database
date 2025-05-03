@@ -342,7 +342,7 @@ func (table table) GetRows() []string {
 }
 func (table table) GetRowById(id string) (string, error) {
 	row := strings.Split(table.rawTable, "\n")
-	for i := 3; i < len(row); i++ {
+	for i := 3; i < len(row)-3; i++ {
 		s := strings.Split(row[i], "|")
 		if strings.TrimSpace(s[2]) == id {
 			return row[i], nil
