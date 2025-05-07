@@ -73,12 +73,15 @@ func (d db) GetTableByName(name string) (Table, error) {
 func CreateDatabase(databaseName string) Db {
 
 	dbName = databaseName
+	globalEncoderKey = *NewSecureTextEncoder("1234k")
 	if !utilities.IsFileExist(databaseName) {
 		initData, err := os.ReadFile("internal/layout.txt")
+		// if you use the test command will trigger this route
 		if err != nil {
 			initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
 		}
-		utilities.ErrorHandler(os.WriteFile(databaseName, initData, 0666))
+		encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
+		utilities.ErrorHandler(os.WriteFile(databaseName, []byte(encodeData), 0644))
 	}
 	return db{name: databaseName, tables: getTables()}
 
@@ -98,7 +101,8 @@ func (table table) AddValue(column string, value string) (Table, error) {
 		}
 	}
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
 func (table table) PrintTable() {
@@ -117,7 +121,9 @@ func (table table) AddValues(values []string) Table {
 			break
 		}
 	}
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(addTableFrontiers(tables)), 0666))
+	newTable := addTableFrontiers(tables)
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table
 }
 func (table table) GetColumns() []string {
@@ -136,11 +142,11 @@ func getTableByName(tableName string) (table, error) {
 	return table{}, &NotFoundError{itemName: "Table"}
 }
 func getTables() []table {
-	data := utilities.Must(os.ReadFile(dbName))
-	dataString := string(data)
-	dataString = strings.ReplaceAll(dataString, "\r", "")
-	dataString = strings.ReplaceAll(dataString, "U+0020", " ")
-	s := strings.Split(dataString, "////")
+	//data := utilities.Must(os.ReadFile(dbName))
+	data := globalEncoderKey.ReadAndDecode(dbName)
+	data = strings.ReplaceAll(data, "\r", "")
+	data = strings.ReplaceAll(data, "U+0020", " ")
+	s := strings.Split(data, "////")
 	sif := utilities.RemoveEmptyIndex(s)
 	tables := make([]table, len(sif))
 	for i, t := range sif {
@@ -151,10 +157,14 @@ func getTables() []table {
 	return tables
 }
 func (d db) addTable(table table) Table {
-	data := utilities.Must(os.ReadFile(dbName))
+	//data := utilities.Must(os.ReadFile(dbName))
+	data := globalEncoderKey.ReadAndDecode(dbName)
+	dataByte := []byte(data)
 	raw := tableBuilder(table)
-	data = append(data, []byte(raw)...)
-	utilities.ErrorHandler(os.WriteFile(dbName, data, 0666))
+	dataByte = append(dataByte, []byte(raw)...)
+	dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
+
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
 	return utilities.Must(d.GetTableByName(table.name))
 
 }
@@ -269,7 +279,8 @@ func (table table) UpdateTableName(newName string) Table {
 		}
 	}
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table
 }
 func (table table) UpdateColumnName(oldColumnName string, newColumnName string) (Table, error) {
@@ -293,7 +304,8 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 	}
 
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 
 }
@@ -328,7 +340,8 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 		}
 	}
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
 func (table table) GetRows() []string {
@@ -377,7 +390,8 @@ func (d db) DeleteTable(tableName string) {
 	}
 
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 }
 func (table table) DeleteRow(id string) (Table, error) {
 
@@ -401,7 +415,8 @@ func (table table) DeleteRow(id string) (Table, error) {
 	}
 
 	newTable := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
 func (table table) DeleteColumn(columnName string) (Table, error) {
@@ -434,7 +449,8 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 		}
 	}
 	tablesWithFrontier := addTableFrontiers(tables)
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(tablesWithFrontier), 0666))
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(tablesWithFrontier))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
 func deleteColumnData(table string, columnIndex int) string {
