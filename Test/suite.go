@@ -11,16 +11,24 @@ import (
 
 type tableSuite struct {
 	suite.Suite
-	db pkg.Db
+	db       pkg.Db
+	dbConfig pkg.DbConfig
 }
 
 type databaseSuite struct {
 	suite.Suite
-	db pkg.Db
+	db       pkg.Db
+	dbConfig pkg.DbConfig
+}
+
+var testConfig = []pkg.DbConfig{
+	{SecurityKey: "", DatabaseName: "testDb.txt"},
+	{SecurityKey: "testKey123", DatabaseName: "testDbWithKey.txt"},
 }
 
 func (s *databaseSuite) SetupTest() {
-	s.db = pkg.CreateDatabase("testDb.txt")
+	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
+	s.db = config.CreateDatabase()
 }
 
 func (s *databaseSuite) TearDownTest() {
@@ -28,7 +36,8 @@ func (s *databaseSuite) TearDownTest() {
 }
 
 func (s *tableSuite) SetupTest() {
-	s.db = pkg.CreateDatabase("testDb.txt")
+	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
+	s.db = config.CreateDatabase()
 }
 
 func (s *tableSuite) TearDownTest() {

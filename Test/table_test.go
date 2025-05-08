@@ -140,6 +140,10 @@ func (s *tableSuite) TestGetRowById_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func TestTables(t *testing.T) {
-	suite.Run(t, new(tableSuite))
+func TestTable(t *testing.T) {
+	for _, config := range testConfig {
+		t.Run(fmt.Sprintf("DbConfig: %s", config.DatabaseName), func(t *testing.T) {
+			suite.Run(t, &tableSuite{dbConfig: config})
+		})
+	}
 }

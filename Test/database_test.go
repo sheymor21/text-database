@@ -52,5 +52,9 @@ func (s *databaseSuite) TestGetTableByNameError() {
 }
 
 func TestDatabase(t *testing.T) {
-	suite.Run(t, new(databaseSuite))
+	for _, config := range testConfig {
+		t.Run(fmt.Sprintf("DbConfig: %s", config.DatabaseName), func(t *testing.T) {
+			suite.Run(t, &databaseSuite{dbConfig: config})
+		})
+	}
 }
