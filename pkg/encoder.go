@@ -29,6 +29,9 @@ func NewSecureTextEncoder(secretKey string) *SecureTextEncoder {
 }
 
 func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
+	if !securityKeyExist {
+		return plainText, nil
+	}
 	// Create cipher block
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
@@ -56,6 +59,9 @@ func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
 }
 
 func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
+	if !securityKeyExist {
+		return encodedText, nil
+	}
 	ciphertext, err := base64.StdEncoding.DecodeString(encodedText)
 	if err != nil {
 		return "", err

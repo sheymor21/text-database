@@ -5,5 +5,7 @@ import (
 )
 
 func main() {
-	pkg.CreateDatabase("database.txt")
+	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "database.txt"}
+	config.CreateDatabase()
+
 }
