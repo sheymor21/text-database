@@ -30,13 +30,9 @@ var securityKeyExist bool
 var dbName string
 
 func (c DbConfig) CreateDatabase() (Db, error) {
-	if strings.TrimSpace(c.DatabaseName) == "" {
-		return nil, errors.New("database name is required")
-	} else {
-		split := strings.Split(c.DatabaseName, ".")
-		if len(split) != 2 || split[1] != "txt" {
-			return nil, errors.New("database name must be a .txt file")
-		}
+	validationErr := validateDatabaseName(c.DatabaseName)
+	if validationErr != nil {
+		return nil, validationErr
 	}
 
 	dbName = c.DatabaseName
@@ -187,4 +183,15 @@ func getData(table string) string {
 		newRow[i-3] = row[i]
 	}
 	return strings.Join(newRow, "\n")
+}
+func validateDatabaseName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return errors.New("database name is required")
+	} else {
+		split := strings.Split(name, ".")
+		if len(split) != 2 || split[1] != "txt" {
+			return errors.New("database name must be a .txt file")
+		}
+	}
+	return nil
 }
