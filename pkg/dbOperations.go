@@ -22,11 +22,11 @@ type db struct {
 	tables []table
 }
 type DbConfig struct {
-	SecurityKey  string
-	DatabaseName string
+	EncryptionKey string
+	DatabaseName  string
 }
 
-var securityKeyExist bool
+var encryptionKeyExist bool
 var dbName string
 
 func (c DbConfig) CreateDatabase() (Db, error) {
@@ -36,9 +36,9 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 	}
 
 	dbName = c.DatabaseName
-	if strings.TrimSpace(c.SecurityKey) != "" {
-		globalEncoderKey = *NewSecureTextEncoder(c.SecurityKey)
-		securityKeyExist = true
+	if strings.TrimSpace(c.EncryptionKey) != "" {
+		globalEncoderKey = *NewSecureTextEncoder(c.EncryptionKey)
+		encryptionKeyExist = true
 	}
 	if !utilities.IsFileExist(c.DatabaseName) {
 		initData, err := os.ReadFile("internal/layout.txt")
@@ -46,12 +46,12 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 		if err != nil {
 			initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
 		}
-		if strings.TrimSpace(c.SecurityKey) != "" {
+		if strings.TrimSpace(c.EncryptionKey) != "" {
 			encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
 			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
 		} else {
 			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, initData, 0644))
-			securityKeyExist = false
+			encryptionKeyExist = false
 		}
 	}
 	return db{name: c.DatabaseName, tables: getTables()}, nil

@@ -22,12 +22,12 @@ type databaseSuite struct {
 }
 
 var testConfig = []pkg.DbConfig{
-	{SecurityKey: "", DatabaseName: "testDb.txt"},
-	{SecurityKey: "testKey123", DatabaseName: "testDbWithKey.txt"},
+	{EncryptionKey: "", DatabaseName: "testDb.txt"},
+	{EncryptionKey: "testKey123", DatabaseName: "testDbWithKey.txt"},
 }
 
 func (s *databaseSuite) SetupTest() {
-	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
+	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "testDb.txt"}
 	s.db, _ = config.CreateDatabase()
 }
 
@@ -36,7 +36,7 @@ func (s *databaseSuite) TearDownTest() {
 }
 
 func (s *tableSuite) SetupTest() {
-	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
+	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "testDb.txt"}
 	s.db, _ = config.CreateDatabase()
 }
 
