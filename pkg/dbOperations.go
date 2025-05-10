@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -28,9 +29,18 @@ type DbConfig struct {
 var securityKeyExist bool
 var dbName string
 
-func (c DbConfig) CreateDatabase() Db {
+func (c DbConfig) CreateDatabase() (Db, error) {
+	if strings.TrimSpace(c.DatabaseName) == "" {
+		return nil, errors.New("database name is required")
+	} else {
+		split := strings.Split(c.DatabaseName, ".")
+		if len(split) != 2 || split[1] != "txt" {
+			return nil, errors.New("database name must be a .txt file")
+		}
+	}
+
 	dbName = c.DatabaseName
-	if c.SecurityKey != "" {
+	if strings.TrimSpace(c.SecurityKey) != "" {
 		globalEncoderKey = *NewSecureTextEncoder(c.SecurityKey)
 		securityKeyExist = true
 	}
@@ -40,7 +50,7 @@ func (c DbConfig) CreateDatabase() Db {
 		if err != nil {
 			initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
 		}
-		if c.SecurityKey != "" {
+		if strings.TrimSpace(c.SecurityKey) != "" {
 			encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
 			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
 		} else {
@@ -48,7 +58,7 @@ func (c DbConfig) CreateDatabase() Db {
 			securityKeyExist = false
 		}
 	}
-	return db{name: c.DatabaseName, tables: getTables()}
+	return db{name: c.DatabaseName, tables: getTables()}, nil
 
 }
 func (d db) GetName() string {
