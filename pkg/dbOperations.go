@@ -180,15 +180,6 @@ func getColumns(rawTable string) []string {
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
 }
-func getTableIndex(table string) int {
-	tables := getTables()
-	for i, t := range tables {
-		if t.rawTable == table {
-			return i
-		}
-	}
-	return -1
-}
 func getData(table string) string {
 	row := strings.Split(table, "\n")
 	newRow := make([]string, len(row))
