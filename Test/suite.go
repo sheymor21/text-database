@@ -28,7 +28,7 @@ var testConfig = []pkg.DbConfig{
 
 func (s *databaseSuite) SetupTest() {
 	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
-	s.db = config.CreateDatabase()
+	s.db, _ = config.CreateDatabase()
 }
 
 func (s *databaseSuite) TearDownTest() {
@@ -37,7 +37,7 @@ func (s *databaseSuite) TearDownTest() {
 
 func (s *tableSuite) SetupTest() {
 	config := pkg.DbConfig{SecurityKey: "", DatabaseName: "testDb.txt"}
-	s.db = config.CreateDatabase()
+	s.db, _ = config.CreateDatabase()
 }
 
 func (s *tableSuite) TearDownTest() {
