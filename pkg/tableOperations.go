@@ -26,7 +26,7 @@ type Table interface {
 type table struct {
 	name     string
 	columns  []string
-	data     string
+	values   []string
 	rawTable string
 }
 

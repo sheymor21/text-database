@@ -75,7 +75,7 @@ func (d db) PrintTables() {
 	}
 }
 func (d db) NewTable(name string, columns []string) Table {
-	t := &table{name, columns, "", ""}
+	t := &table{name, columns, nil, ""}
 	tb := d.addTable(*t)
 	return tb
 }
@@ -130,8 +130,8 @@ func getTables() []table {
 	tables := make([]table, len(sif))
 	for i, t := range sif {
 		name := getTableName(t)
-		rowData := getData(t)
-		tables[i] = table{name, getColumns(t), rowData, t}
+		values := getValues(t)
+		tables[i] = table{name, getColumns(t), values, t}
 	}
 	return tables
 }
@@ -141,6 +141,10 @@ func tableBuilder(table table) string {
 		"[1] id %s"+
 		"\n!*!"+
 		"\n-----%s_End-----\n////", table.name, columnsRaw, table.name)
+	if table.values != nil {
+		values := valuesBuilder(tableRaw, table.values)
+		tableRaw = strings.Replace(tableRaw, "!*!", values, 1)
+	}
 	return tableRaw
 }
 func columnsBuilder(columns []string) string {
@@ -176,13 +180,13 @@ func getColumns(rawTable string) []string {
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
 }
-func getData(table string) string {
+func getValues(table string) []string {
 	row := strings.Split(table, "\n")
 	newRow := make([]string, len(row))
 	for i := 3; i < len(row); i++ {
 		newRow[i-3] = row[i]
 	}
-	return strings.Join(newRow, "\n")
+	return newRow
 }
 func validateDatabaseName(name string) error {
 	if strings.TrimSpace(name) == "" {
