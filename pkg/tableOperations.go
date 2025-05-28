@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 	"text-database/pkg/utilities"
 )
@@ -18,11 +19,13 @@ type Table interface {
 	DeleteRow(id string) (Table, error)
 	DeleteColumn(columnName string) (Table, error)
 	GetRowById(id string) (Row, error)
-	GetRows() []Row
+	GetRows() Rows
 	GetColumns() []string
 	PrintTable()
 	GetName() string
 }
+
+type Rows []Row
 type Row struct {
 	Value string
 }
@@ -164,32 +167,21 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
-func (table table) GetRows() []Row {
-	//rowsStr := strings.Split(table.rawTable, "\n")
-	//rowsStr = utilities.RemoveEmptyIndex(rowsStr)
-	//rows := make([]Row, len(rowsStr)-3)
-	//for i := 2; i < len(rowsStr)-3; i++ {
-	//	rows[i-3] = Row{rowsStr[i]}
-	//}
+func (table table) GetRows() Rows {
 	values := getValues(table.rawTable)
 	return values
 }
 func (table table) GetRowById(id string) (Row, error) {
-	//rowStr := strings.Split(table.rawTable, "\n")
-	//row := make([]Row, len(rowStr)-6)
 	rows := getValues(table.rawTable)
-	for i := 0; i < len(rows); i++ {
+	for i := 1; i < len(rows); i++ {
 		s := strings.Split(rows[i].Value, "|")
 		if strings.TrimSpace(s[2]) == id {
 			return rows[i], nil
 		}
 	}
-	//for i := 3; i < len(rowStr)-3; i++ {
-	//}
 	return Row{}, &NotFoundError{itemName: "Row"}
 }
 func (table table) DeleteRow(id string) (Table, error) {
-
 	row, err := table.GetRowById(id)
 	if err != nil {
 		return nil, err
@@ -248,6 +240,34 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
+func (r Rows) String() string {
+	s := make([]string, len(r))
+	return strings.Join(s, "\n")
+}
+
+func (r Rows) OrderBy(column string) Rows {
+
+	newSlice := make([]Row, len(r)-1)
+	for i := 1; i < len(r); i++ {
+		newSlice[i-1] = r[i]
+	}
+	sRow := strings.Split(r[0].Value, " ")
+
+	var columnIndex int
+	for i, v := range sRow {
+		if v == column {
+			columnIndex = i
+		}
+	}
+
+	sort.Slice(newSlice, func(i, j int) bool {
+		s := strings.Split(newSlice[i].Value, " ")
+		s2 := strings.Split(newSlice[j].Value, " ")
+		return s[columnIndex] > s2[columnIndex]
+	})
+	newSlice = append(Rows{r[0]}, newSlice...)
+	return newSlice
+}
 func deleteColumnData(table string, columnIndex int) string {
 	tableSlice := strings.Split(table, "\n")
 	length := len(tableSlice)
@@ -279,7 +299,7 @@ func updateRow(table string, id string, newRow string) (string, error) {
 		}
 	}
 	if !idExist {
-		return "", &NotFoundError{itemName: "Id"}
+		return "", &NotFoundError{itemName: "id"}
 	}
 	return strings.Join(row, "\n"), nil
 }

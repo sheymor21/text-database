@@ -182,9 +182,9 @@ func getColumns(rawTable string) []string {
 }
 func getValues(table string) []Row {
 	row := strings.Split(table, "\n")
-	newRow := make([]Row, len(row)-6)
+	newRow := make([]Row, len(row)-5)
 	n := 0
-	for i := 3; i < len(row)-3; i++ {
+	for i := 2; i < len(row)-3; i++ {
 		newRow[n].Value = row[i]
 		n++
 	}
