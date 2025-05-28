@@ -254,8 +254,8 @@ func (r Rows) OrderBy(column string) Rows {
 	sRow := strings.Split(r[0].Value, " ")
 
 	var columnIndex int
-	for i, v := range sRow {
-		if v == column {
+	for i := 1; i < len(sRow); i = i + 2 {
+		if sRow[i] == column {
 			columnIndex = i
 		}
 	}
