@@ -180,11 +180,13 @@ func getColumns(rawTable string) []string {
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
 }
-func getValues(table string) []string {
+func getValues(table string) []Row {
 	row := strings.Split(table, "\n")
-	newRow := make([]string, len(row))
-	for i := 3; i < len(row); i++ {
-		newRow[i-3] = row[i]
+	newRow := make([]Row, len(row)-6)
+	n := 0
+	for i := 3; i < len(row)-3; i++ {
+		newRow[n].Value = row[i]
+		n++
 	}
 	return newRow
 }

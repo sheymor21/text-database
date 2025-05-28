@@ -17,16 +17,19 @@ type Table interface {
 	UpdateValue(columnName string, id string, newValue string) (Table, error)
 	DeleteRow(id string) (Table, error)
 	DeleteColumn(columnName string) (Table, error)
-	GetRowById(id string) (string, error)
-	GetRows() []string
+	GetRowById(id string) (Row, error)
+	GetRows() []Row
 	GetColumns() []string
 	PrintTable()
 	GetName() string
 }
+type Row struct {
+	Value string
+}
 type table struct {
 	name     string
 	columns  []string
-	values   []string
+	values   []Row
 	rawTable string
 }
 
@@ -56,7 +59,11 @@ func (table table) GetName() string {
 	return table.name
 }
 func (table table) AddValues(values []string) Table {
-	s := valuesBuilder(table.rawTable, values)
+	rows := make([]Row, len(values))
+	for i, v := range values {
+		rows[i] = Row{Value: v}
+	}
+	s := valuesBuilder(table.rawTable, rows)
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
 	tables := getTables()
 	for i, t := range tables {
@@ -133,10 +140,10 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 			if rowErr != nil {
 				return nil, rowErr
 			}
-			rowSlice := strings.Split(row, "|")
+			rowSlice := strings.Split(row.Value, "|")
 			rowSlice[i+1] = " " + newValue + " "
-			row = strings.Join(rowSlice, "|")
-			updateTable, err := updateRow(table.rawTable, id, row)
+			row.Value = strings.Join(rowSlice, "|")
+			updateTable, err := updateRow(table.rawTable, id, row.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -157,24 +164,29 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
 	return table, nil
 }
-func (table table) GetRows() []string {
-	rows := strings.Split(table.rawTable, "\n")
-	sRows := make([]string, len(rows)-3)
-
-	for i := 3; i < len(rows)-3; i++ {
-		sRows[i-3] = rows[i]
-	}
-	return utilities.RemoveEmptyIndex(sRows)
+func (table table) GetRows() []Row {
+	//rowsStr := strings.Split(table.rawTable, "\n")
+	//rowsStr = utilities.RemoveEmptyIndex(rowsStr)
+	//rows := make([]Row, len(rowsStr)-3)
+	//for i := 2; i < len(rowsStr)-3; i++ {
+	//	rows[i-3] = Row{rowsStr[i]}
+	//}
+	values := getValues(table.rawTable)
+	return values
 }
-func (table table) GetRowById(id string) (string, error) {
-	row := strings.Split(table.rawTable, "\n")
-	for i := 3; i < len(row)-3; i++ {
-		s := strings.Split(row[i], "|")
+func (table table) GetRowById(id string) (Row, error) {
+	//rowStr := strings.Split(table.rawTable, "\n")
+	//row := make([]Row, len(rowStr)-6)
+	rows := getValues(table.rawTable)
+	for i := 0; i < len(rows); i++ {
+		s := strings.Split(rows[i].Value, "|")
 		if strings.TrimSpace(s[2]) == id {
-			return row[i], nil
+			return rows[i], nil
 		}
 	}
-	return "", &NotFoundError{itemName: "Row"}
+	//for i := 3; i < len(rowStr)-3; i++ {
+	//}
+	return Row{}, &NotFoundError{itemName: "Row"}
 }
 func (table table) DeleteRow(id string) (Table, error) {
 
@@ -183,7 +195,7 @@ func (table table) DeleteRow(id string) (Table, error) {
 		return nil, err
 	}
 	rowSlice := strings.Split(table.rawTable, "\n")
-	index := slices.Index(rowSlice, row)
+	index := slices.Index(rowSlice, row.Value)
 	newRow := slices.Replace(rowSlice, index, index+1, "")
 	newRow = utilities.RemoveEmptyIndex(newRow)
 	rowString := strings.Join(newRow, "\n")
@@ -297,7 +309,7 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 	co = append(co, "\n!*!")
 	return strings.Join(co, ""), nil
 }
-func valuesBuilder(table string, values []string) string {
+func valuesBuilder(table string, values []Row) string {
 	co := getColumns(table)
 	co = utilities.RemoveEmptyIndex(co)
 	count := len(co)
@@ -310,12 +322,12 @@ func valuesBuilder(table string, values []string) string {
 	}
 
 	n := 3
-	for _, v := range values {
+	for _, r := range values {
 
 		if n > count {
 			break
 		}
-		co[n] = strings.ReplaceAll(v, " ", "U+0020")
+		co[n] = strings.ReplaceAll(r.Value, " ", "U+0020")
 		n = n + 2
 
 	}

@@ -13,8 +13,8 @@ import (
 func (s *tableSuite) TestGetRowById() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	row, _ := tb.GetRowById("2")
-	row = strings.TrimSpace(row)
-	if row != "|1| 2 |2| juan |3| 54" {
+	row.Value = strings.TrimSpace(row.Value)
+	if row.Value != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", row))
 	}
 }
@@ -29,8 +29,8 @@ func (s *tableSuite) TestAddValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb, _ = tb.AddValue("name", "Jose")
 	rows := tb.GetRows()
-	id := getId(rows[2])
-	if rows[2] != fmt.Sprintf("|1| %s |2| Jose |3| null ", id) {
+	id := getId(rows[2].Value)
+	if rows[2].Value != fmt.Sprintf("|1| %s |2| Jose |3| null ", id) {
 		s.Fail(fmt.Sprintf("Expected |1| %s |2| Jose |3| null", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 
@@ -39,8 +39,8 @@ func (s *tableSuite) TestAddValues() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb = tb.AddValues([]string{"Jose", "20"})
 	rows := tb.GetRows()
-	id := getId(rows[2])
-	if rows[2] != fmt.Sprintf("|1| %s |2| Jose |3| 20 ", id) {
+	id := getId(rows[2].Value)
+	if rows[2].Value != fmt.Sprintf("|1| %s |2| Jose |3| 20 ", id) {
 		s.Fail(fmt.Sprintf("Expected |1| %s |2| Jose |3| 20", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
@@ -63,7 +63,7 @@ func (s *tableSuite) TestUpdateValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb, _ = tb.UpdateValue("age", "2", "30")
 	rows := tb.GetRows()
-	if rows[1] != "|1| 2 |2| juan |3| 30 " {
+	if rows[1].Value != "|1| 2 |2| juan |3| 30 " {
 		s.Fail("Expected |1| 2 |2| juan |3| 30", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
@@ -71,7 +71,7 @@ func (s *tableSuite) TestDeleteRow() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb, _ = tb.DeleteRow("1")
 	rows := tb.GetRows()
-	if rows[0] != "|1| 2 |2| juan |3| 54" || len(rows) != 1 {
+	if rows[0].Value != "|1| 2 |2| juan |3| 54" || len(rows) != 1 {
 		s.Fail("Expected |1| 1 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", rows[0]))
 	}
 }
