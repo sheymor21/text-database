@@ -140,12 +140,21 @@ func (s *tableSuite) TestGetRowById_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestOrderBy() {
+func (s *tableSuite) TestOrderByAscend() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow := rows.OrderBy("age")
+	newRow := rows.OrderByAscend("age")
 	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
+	}
+}
+
+func (s *tableSuite) TestOrderByDescend() {
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	newRow := rows.OrderByDescend("age")
+	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
+		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
 func TestTable(t *testing.T) {

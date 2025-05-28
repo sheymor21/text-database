@@ -245,8 +245,15 @@ func (r Rows) String() string {
 	return strings.Join(s, "\n")
 }
 
-func (r Rows) OrderBy(column string) Rows {
+func (r Rows) OrderByAscend(column string) Rows {
+	return orderBy(r, column, true)
+}
 
+func (r Rows) OrderByDescend(column string) Rows {
+	return orderBy(r, column, false)
+}
+
+func orderBy(r Rows, column string, ascend bool) []Row {
 	newSlice := make([]Row, len(r)-1)
 	for i := 1; i < len(r); i++ {
 		newSlice[i-1] = r[i]
@@ -263,7 +270,12 @@ func (r Rows) OrderBy(column string) Rows {
 	sort.Slice(newSlice, func(i, j int) bool {
 		s := strings.Split(newSlice[i].Value, " ")
 		s2 := strings.Split(newSlice[j].Value, " ")
-		return s[columnIndex] > s2[columnIndex]
+		if ascend {
+			return s[columnIndex] > s2[columnIndex]
+		} else {
+
+			return s[columnIndex] < s2[columnIndex]
+		}
 	})
 	newSlice = append(Rows{r[0]}, newSlice...)
 	return newSlice
