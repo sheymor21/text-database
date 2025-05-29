@@ -43,7 +43,7 @@ func (s *databaseSuite) TestGetTableByName() {
 
 	}
 }
-func (s *databaseSuite) TestGetTableByNameError() {
+func (s *databaseSuite) TestGetTableByName_ReturnNameError() {
 	_, err := s.db.GetTableByName("test")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {

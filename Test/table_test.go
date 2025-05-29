@@ -83,7 +83,7 @@ func (s *tableSuite) TestDeleteColumn() {
 		s.Fail("Expected [1] id [2] name", fmt.Sprintf("Recibe: %s", columns))
 	}
 }
-func (s *tableSuite) TestAddValue_ReturnError() {
+func (s *tableSuite) TestAddValue_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.AddValue("test", "value")
 	var example *pkg.NotFoundError
@@ -91,7 +91,7 @@ func (s *tableSuite) TestAddValue_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestUpdateColumnName_ReturnError() {
+func (s *tableSuite) TestUpdateColumnName_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.UpdateColumnName("test", "value")
 	var example *pkg.NotFoundError
@@ -115,7 +115,7 @@ func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestDeleteRow_ReturnError() {
+func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.DeleteRow("test")
 	var example *pkg.NotFoundError
@@ -123,7 +123,7 @@ func (s *tableSuite) TestDeleteRow_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestDeleteColumn_ReturnError() {
+func (s *tableSuite) TestDeleteColumn_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.DeleteColumn("test")
 	var example *pkg.NotFoundError
@@ -131,7 +131,7 @@ func (s *tableSuite) TestDeleteColumn_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestGetRowById_ReturnError() {
+func (s *tableSuite) TestGetRowById_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.GetRowById("test")
 	var example *pkg.NotFoundError
