@@ -174,8 +174,8 @@ func (table table) GetRows() Rows {
 func (table table) GetRowById(id string) (Row, error) {
 	rows := getValues(table.rawTable)
 	for i := 1; i < len(rows); i++ {
-		s := strings.Split(rows[i].Value, "|")
-		if strings.TrimSpace(s[2]) == id {
+		s := strings.Split(rows[i].Value, " ")
+		if strings.TrimSpace(s[1]) == id {
 			return rows[i], nil
 		}
 	}
@@ -244,15 +244,12 @@ func (r Rows) String() string {
 	s := make([]string, len(r))
 	return strings.Join(s, "\n")
 }
-
 func (r Rows) OrderByAscend(column string) Rows {
 	return orderBy(r, column, true)
 }
-
 func (r Rows) OrderByDescend(column string) Rows {
 	return orderBy(r, column, false)
 }
-
 func orderBy(r Rows, column string, ascend bool) []Row {
 	newSlice := make([]Row, len(r)-1)
 	for i := 1; i < len(r); i++ {
