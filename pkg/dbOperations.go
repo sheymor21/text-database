@@ -121,7 +121,6 @@ func getTableByName(tableName string) (table, error) {
 	return table{}, &NotFoundError{itemName: "Table"}
 }
 func getTables() []table {
-	//data := utilities.Must(os.ReadFile(dbName))
 	data := globalEncoderKey.ReadAndDecode(dbName)
 	data = strings.ReplaceAll(data, "\r", "")
 	data = strings.ReplaceAll(data, "U+0020", " ")
