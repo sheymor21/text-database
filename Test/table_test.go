@@ -142,7 +142,7 @@ func (s *tableSuite) TestGetRowById_ReturnError() {
 func (s *tableSuite) TestOrderByAscend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow := rows.OrderByAscend("age")
+	newRow, _ := rows.OrderByAscend("age")
 	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
@@ -150,7 +150,7 @@ func (s *tableSuite) TestOrderByAscend_Numbers() {
 func (s *tableSuite) TestOrderByDescend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow := rows.OrderByDescend("age")
+	newRow, _ := rows.OrderByDescend("age")
 	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
 		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
@@ -158,7 +158,7 @@ func (s *tableSuite) TestOrderByDescend_Numbers() {
 func (s *tableSuite) TestOrderByAscend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow := rows.OrderByAscend("name")
+	newRow, _ := rows.OrderByAscend("name")
 	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
 		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
@@ -166,9 +166,18 @@ func (s *tableSuite) TestOrderByAscend_Letters() {
 func (s *tableSuite) TestOrderByDescend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow := rows.OrderByDescend("name")
+	newRow, _ := rows.OrderByDescend("name")
 	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
+	}
+}
+func (s *tableSuite) TestOrderBy_ReturnColumnError() {
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	_, err := rows.OrderByAscend("Email")
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
 	}
 }
 

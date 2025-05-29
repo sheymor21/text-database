@@ -244,13 +244,13 @@ func (r Rows) String() string {
 	s := make([]string, len(r))
 	return strings.Join(s, "\n")
 }
-func (r Rows) OrderByAscend(column string) Rows {
+func (r Rows) OrderByAscend(column string) (Rows, error) {
 	return orderBy(r, column, true)
 }
-func (r Rows) OrderByDescend(column string) Rows {
+func (r Rows) OrderByDescend(column string) (Rows, error) {
 	return orderBy(r, column, false)
 }
-func orderBy(r Rows, column string, ascend bool) []Row {
+func orderBy(r Rows, column string, ascend bool) ([]Row, error) {
 	newSlice := make([]Row, len(r)-1)
 	for i := 1; i < len(r); i++ {
 		newSlice[i-1] = r[i]
@@ -258,10 +258,17 @@ func orderBy(r Rows, column string, ascend bool) []Row {
 	sRow := strings.Split(r[0].Value, " ")
 
 	var columnIndex int
+	err := &NotFoundError{itemName: "Column"}
 	for i := 1; i < len(sRow); i = i + 2 {
 		if sRow[i] == column {
 			columnIndex = i
+			err = nil
+			break
 		}
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	sort.Slice(newSlice, func(i, j int) bool {
@@ -275,7 +282,7 @@ func orderBy(r Rows, column string, ascend bool) []Row {
 		}
 	})
 	newSlice = append(Rows{r[0]}, newSlice...)
-	return newSlice
+	return newSlice, nil
 }
 func deleteColumnData(table string, columnIndex int) string {
 	tableSlice := strings.Split(table, "\n")
