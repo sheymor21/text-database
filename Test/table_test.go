@@ -107,7 +107,6 @@ func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
 		s.ErrFail(err)
 	}
 }
-
 func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.UpdateValue("name", "test", "value")
@@ -140,7 +139,7 @@ func (s *tableSuite) TestGetRowById_ReturnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestOrderByAscend() {
+func (s *tableSuite) TestOrderByAscend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow := rows.OrderByAscend("age")
@@ -148,8 +147,7 @@ func (s *tableSuite) TestOrderByAscend() {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
-
-func (s *tableSuite) TestOrderByDescend() {
+func (s *tableSuite) TestOrderByDescend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow := rows.OrderByDescend("age")
@@ -157,6 +155,23 @@ func (s *tableSuite) TestOrderByDescend() {
 		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
+func (s *tableSuite) TestOrderByAscend_Letters() {
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	newRow := rows.OrderByAscend("name")
+	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
+		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
+	}
+}
+func (s *tableSuite) TestOrderByDescend_Letters() {
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	newRow := rows.OrderByDescend("name")
+	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
+		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
+	}
+}
+
 func TestTable(t *testing.T) {
 	for _, config := range testConfig {
 		t.Run(fmt.Sprintf("DbConfig: %s", config.DatabaseName), func(t *testing.T) {
