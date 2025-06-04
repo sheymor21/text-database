@@ -82,6 +82,7 @@ func cleanDatabase() {
 	builder.WriteString(functionCleanDatabase)
 	return []byte(builder.String())
 }
+
 func migrationTableBuilder() string {
 	var builder strings.Builder
 	tables := getTables()
@@ -89,8 +90,10 @@ func migrationTableBuilder() string {
 	for _, t := range tables {
 		tableName := strings.ReplaceAll(t.name, "-", "")
 		columns := migrationColumnBuilder(t.columns)
-		row := getValues(t.rawTable)
-		values := migrationValuesBuilder(row)
+		//Todo:create a configuration function that active this
+		//row := getValues(t.rawTable)
+		//values := migrationValuesBuilder(row)
+		values := "[]value{}"
 		tableStr := fmt.Sprintf(`{
 			name:    %q,
 			columns: %s,
