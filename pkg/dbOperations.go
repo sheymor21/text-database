@@ -21,15 +21,25 @@ type db struct {
 	name   string
 	tables []table
 }
+type DataConfig struct {
+	TableName string
+	Columns   []string
+	Values    []string
+}
 type DbConfig struct {
 	EncryptionKey string
 	DatabaseName  string
+	DataConfig    []DataConfig
 }
 
 var encryptionKeyExist bool
 var dbName string
 
 func (c DbConfig) CreateDatabase() (Db, error) {
+	checkDataErr := checkDataConfig(c.DataConfig)
+	if checkDataErr != nil {
+		return nil, checkDataErr
+	}
 	validationErr := validateDatabaseName(c.DatabaseName)
 	if validationErr != nil {
 		return nil, validationErr
@@ -41,20 +51,17 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 		encryptionKeyExist = true
 	}
 	if !utilities.IsFileExist(c.DatabaseName) {
-		initData, err := os.ReadFile("internal/layout.txt")
-		// if you use the test command will trigger this route
-		if err != nil {
-			initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
-		}
-		if strings.TrimSpace(c.EncryptionKey) != "" {
-			encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
-			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
+		if c.DataConfig == nil {
+			setDefaultData(c)
 		} else {
-			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, initData, 0644))
-			encryptionKeyExist = false
+			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
 		}
 	}
-	return db{name: c.DatabaseName, tables: getTables()}, nil
+	newDb := db{name: c.DatabaseName, tables: getTables()}
+	if c.DataConfig != nil {
+		addData(newDb, c.DataConfig)
+	}
+	return newDb, nil
 
 }
 func (d db) GetName() string {
@@ -199,4 +206,40 @@ func validateDatabaseName(name string) error {
 		}
 	}
 	return nil
+}
+func checkDataConfig(d []DataConfig) error {
+	for _, v := range d {
+
+		if len(v.Columns) != len(v.Values) {
+			message := fmt.Sprintf("columns and values must have the same length, %d != %d, table: %s", len(v.Columns), len(v.Values), v.TableName)
+			return errors.New(message)
+		}
+		if v.TableName == "" {
+			return errors.New("table name is required")
+		}
+		if len(v.Columns) == 0 {
+			return errors.New("columns are required")
+		}
+	}
+	return nil
+}
+func addData(db db, d []DataConfig) {
+	for _, v := range d {
+		tb := db.NewTable(v.TableName, v.Columns)
+		tb.AddValues(v.Values)
+	}
+}
+func setDefaultData(c DbConfig) {
+	initData, err := os.ReadFile("internal/layout.txt")
+	// if you use the test command will trigger this route
+	if err != nil {
+		initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
+	}
+	if strings.TrimSpace(c.EncryptionKey) != "" {
+		encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
+		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
+	} else {
+		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, initData, 0644))
+		encryptionKeyExist = false
+	}
 }
