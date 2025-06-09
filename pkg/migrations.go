@@ -9,14 +9,14 @@ import (
 )
 
 func (c DbConfig) CreateMigration() {
-	if !utilities.IsFileExist("migrations/initialMigration.txt") {
+	if !utilities.IsFileExist("migrations/initialMigration.go") {
 		utilities.ErrorHandler(os.MkdirAll("migrations", 0755))
-		code := migrationBuilder()
+		code := migrationBuilder(c)
 		utilities.ErrorHandler(os.WriteFile("migrations/initialMigration.go", code, 0755))
 	}
 }
 
-func migrationBuilder() []byte {
+func migrationBuilder(c DbConfig) []byte {
 	var builder strings.Builder
 
 	imports := `
@@ -33,7 +33,7 @@ import (
 	migrationVersion     = 1
 	migrationDate        = %q
 	migrationDescription = %q
-)`, "initialMigration", "s.txt", time.Now().UTC().String(), "Initial Migration")
+)`, "initialMigration", c.DatabaseName, time.Now().UTC().String(), "Initial Migration")
 
 	types := `
 type table struct {
@@ -61,7 +61,7 @@ func GenerateTable() {
 			tb = tb.AddValues(v.value)
 		}
 	}
-}`, migrationTableBuilder())
+}`, migrationTableBuilder(c))
 
 	functionCleanDatabase := fmt.Sprintf(`
 func cleanDatabase() {
@@ -83,17 +83,18 @@ func cleanDatabase() {
 	return []byte(builder.String())
 }
 
-func migrationTableBuilder() string {
+func migrationTableBuilder(c DbConfig) string {
 	var builder strings.Builder
 	tables := getTables()
 
 	for _, t := range tables {
 		tableName := strings.ReplaceAll(t.name, "-", "")
 		columns := migrationColumnBuilder(t.columns)
-		//Todo:create a configuration function that active this
-		//row := getValues(t.rawTable)
-		//values := migrationValuesBuilder(row)
-		values := "[]value{}"
+		var values string
+		if c.DataConfig != nil {
+			values = migrationValuesBuilder(t.name, c.DataConfig)
+		}
+		//values := "[]value{}"
 		tableStr := fmt.Sprintf(`{
 			name:    %q,
 			columns: %s,
@@ -119,20 +120,18 @@ func migrationColumnBuilder(column []string) string {
 	columnStr := fmt.Sprintf("[]string{%s}", slices)
 	return columnStr
 }
-func migrationValuesBuilder(r []Row) string {
+func migrationValuesBuilder(tableName string, r []DataConfig) string {
 	var builder strings.Builder
-	values := make([]string, len(r)-1)
-	for i := 1; i < len(r); i++ {
-		s := strings.Split(r[i].Value, " ")
-		n := 0
-		for j := 3; j < len(s); j = j + 2 {
-			values[n] = s[j]
-			n++
+	for _, v := range r {
+		if v.TableName == strings.ReplaceAll(tableName, "-", "") {
+			for _, iv := range v.Values {
+				valuesS := stringSliceBuilder(iv)
+				a := fmt.Sprintf("{value: []string{%s}}", valuesS)
+				builder.WriteString(a)
+				builder.WriteString(",")
+			}
+			break
 		}
-		valuesS := stringSliceBuilder(values)
-		a := fmt.Sprintf("{value: []string{%s}}", valuesS)
-		builder.WriteString(a)
-		builder.WriteString(",")
 	}
 	dataName := fmt.Sprintf("[]value{%s}", builder.String())
 	return dataName
