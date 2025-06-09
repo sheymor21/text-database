@@ -24,8 +24,9 @@ type db struct {
 type DataConfig struct {
 	TableName string
 	Columns   []string
-	Values    []string
+	Values    []Values
 }
+type Values []string
 type DbConfig struct {
 	EncryptionKey string
 	DatabaseName  string
@@ -55,13 +56,12 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 			setDefaultData(c)
 		} else {
 			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
+			newDb := db{name: c.DatabaseName, tables: getTables()}
+			addData(newDb, c.DataConfig)
+			return newDb, nil
 		}
 	}
-	newDb := db{name: c.DatabaseName, tables: getTables()}
-	if c.DataConfig != nil {
-		addData(newDb, c.DataConfig)
-	}
-	return newDb, nil
+	return db{name: c.DatabaseName, tables: getTables()}, nil
 
 }
 func (d db) GetName() string {
@@ -209,10 +209,12 @@ func validateDatabaseName(name string) error {
 }
 func checkDataConfig(d []DataConfig) error {
 	for _, v := range d {
+		for _, iv := range v.Values {
 
-		if len(v.Columns) != len(v.Values) {
-			message := fmt.Sprintf("columns and values must have the same length, %d != %d, table: %s", len(v.Columns), len(v.Values), v.TableName)
-			return errors.New(message)
+			if len(v.Columns) != len(iv) {
+				message := fmt.Sprintf("columns and values must have the same length, %d != %d, table: %s", len(v.Columns), len(iv), v.TableName)
+				return errors.New(message)
+			}
 		}
 		if v.TableName == "" {
 			return errors.New("table name is required")
@@ -226,7 +228,9 @@ func checkDataConfig(d []DataConfig) error {
 func addData(db db, d []DataConfig) {
 	for _, v := range d {
 		tb := db.NewTable(v.TableName, v.Columns)
-		tb.AddValues(v.Values)
+		for _, iv := range v.Values {
+			tb = tb.AddValues(iv)
+		}
 	}
 }
 func setDefaultData(c DbConfig) {
