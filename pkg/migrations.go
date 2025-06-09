@@ -8,47 +8,39 @@ import (
 	"time"
 )
 
-func (c DbConfig) CreateMigration() {
-	if !utilities.IsFileExist("migrations/initialMigration.go") {
-		utilities.ErrorHandler(os.MkdirAll("migrations", 0755))
-		code := migrationBuilder(c)
-		utilities.ErrorHandler(os.WriteFile("migrations/initialMigration.go", code, 0755))
+func (c DbConfig) CreateMigration(migrationName string) {
+	fileRoute := fmt.Sprintf("../../migrations/%s_%d.go", migrationName, time.Now().Unix())
+	if !utilities.IsFileExist(fileRoute) {
+		code := migrationBuilder(c, migrationName)
+		utilities.ErrorHandler(os.MkdirAll("../../migrations", 0755))
+		utilities.ErrorHandler(os.WriteFile(fileRoute, code, 0755))
+		if !utilities.IsFileExist("../../migrations/constructor.go") {
+			constructorCode := constructorBuilder(c.DatabaseName)
+			utilities.ErrorHandler(os.WriteFile("../../migrations/constructor.go", constructorCode, 0755))
+		}
 	}
 }
 
-func migrationBuilder(c DbConfig) []byte {
+func migrationBuilder(c DbConfig, migrationName string) []byte {
 	var builder strings.Builder
 
 	imports := `
 package migrations
 
-import (
-	"os"
-	"text-database/pkg"
-)
+import "text-database/pkg"
 `
-	constants := fmt.Sprintf(`const (
-	migrationName        = %q
-	databaseName         = %q
-	migrationVersion     = 1
-	migrationDate        = %q
-	migrationDescription = %q
-)`, "initialMigration", c.DatabaseName, time.Now().UTC().String(), "Initial Migration")
+	constants := fmt.Sprintf(`
+	// migrationName        = %q
+	// databaseName         = %q
+	// migrationVersion     = 1
+	// migrationDate        = %q
+	// migrationDescription = %q
+`, migrationName, c.DatabaseName, time.Now().UTC().String(), "Initial Migration")
 
-	types := `
-type table struct {
-	name    string
-	columns []string
-	values  []value
-}
-type value struct {
-	value []string
-}
-`
 	functionGenerateTable := fmt.Sprintf(`
-func GenerateTable() {
+func generate%s() {
 %s
-	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: databaseName}
+	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "%s"}
 	db, err := config.CreateDatabase()
 	if err != nil {
 		return
@@ -61,10 +53,34 @@ func GenerateTable() {
 			tb = tb.AddValues(v.value)
 		}
 	}
-}`, migrationTableBuilder(c))
+}`, upperCase(migrationName), migrationTableBuilder(c), c.DatabaseName)
 
+	builder.WriteString(imports)
+	builder.WriteString(constants)
+	builder.WriteString(functionGenerateTable)
+	return []byte(builder.String())
+}
+
+func constructorBuilder(databaseName string) []byte {
+	var builder strings.Builder
+	imports := `
+package migrations
+
+import "os"
+`
+	types := `
+type table struct {
+	name    string
+	columns []string
+	values  []value
+}
+type value struct {
+	value []string
+}
+`
 	functionCleanDatabase := fmt.Sprintf(`
 func cleanDatabase() {
+databaseName := "%s"
 	file, err := os.ReadFile(databaseName)
 	if err != nil {
 		return
@@ -74,11 +90,9 @@ func cleanDatabase() {
 	if err != nil {
 		return
 	}
-}`)
+}`, databaseName)
 	builder.WriteString(imports)
-	builder.WriteString(constants)
 	builder.WriteString(types)
-	builder.WriteString(functionGenerateTable)
 	builder.WriteString(functionCleanDatabase)
 	return []byte(builder.String())
 }
@@ -146,4 +160,11 @@ func stringSliceBuilder(s []string) string {
 		}
 	}
 	return builder.String()
+}
+
+func upperCase(s string) string {
+	sS := strings.Split(s, "")
+	sS[0] = strings.ToUpper(sS[0])
+	return strings.Join(sS, "")
+
 }
