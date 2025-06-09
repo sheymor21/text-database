@@ -11,12 +11,12 @@ import (
 func (c DbConfig) CreateMigration() {
 	if !utilities.IsFileExist("migrations/initialMigration.txt") {
 		utilities.ErrorHandler(os.MkdirAll("migrations", 0755))
-		code := migrationBuilder(c)
+		code := migrationBuilder()
 		utilities.ErrorHandler(os.WriteFile("migrations/initialMigration.go", code, 0755))
 	}
 }
 
-func migrationBuilder(db DbConfig) []byte {
+func migrationBuilder() []byte {
 	var builder strings.Builder
 
 	imports := `
