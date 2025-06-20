@@ -45,7 +45,6 @@ func generate%s() {
 	if err != nil {
 		return
 	}
-	cleanDatabase()
 
 	for _, t := range *tablesS {
 		tb := db.NewTable(t.name, t.columns)
@@ -66,7 +65,6 @@ func constructorBuilder(databaseName string) []byte {
 	imports := `
 package migrations
 
-import "os"
 `
 	types := `
 type table struct {
@@ -78,22 +76,10 @@ type value struct {
 	value []string
 }
 `
-	functionCleanDatabase := fmt.Sprintf(`
-func cleanDatabase() {
-databaseName := "%s"
-	file, err := os.ReadFile(databaseName)
-	if err != nil {
-		return
-	}
-	file = []byte("")
-	err = os.WriteFile(databaseName, file, 0755)
-	if err != nil {
-		return
-	}
-}`, databaseName)
+
 	builder.WriteString(imports)
 	builder.WriteString(types)
-	builder.WriteString(functionCleanDatabase)
+	//builder.WriteString(functionCleanDatabase)
 	return []byte(builder.String())
 }
 

@@ -61,8 +61,8 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 			return newDb, nil
 		}
 	}
-	return db{name: c.DatabaseName, tables: getTables()}, nil
 
+	return db{name: c.DatabaseName, tables: getTables()}, nil
 }
 func (d db) GetName() string {
 	return dbName
@@ -234,16 +234,23 @@ func addData(db db, d []DataConfig) {
 	}
 }
 func setDefaultData(c DbConfig) {
-	initData, err := os.ReadFile("internal/layout.txt")
-	// if you use the test command will trigger this route
-	if err != nil {
-		initData = utilities.Must(os.ReadFile("../internal/layout.txt"))
-	}
 	if strings.TrimSpace(c.EncryptionKey) != "" {
-		encodeData := utilities.Must(globalEncoderKey.Encode(string(initData)))
+		encodeData := utilities.Must(globalEncoderKey.Encode(string(getLayout())))
 		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
 	} else {
-		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, initData, 0644))
+		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
 		encryptionKeyExist = false
 	}
+}
+
+func getLayout() []byte {
+	layout := `////
+-----Users-----
+[1] id [2] name [3] age
+|1| 1 |2| pedro |3| 32
+|1| 2 |2| juan |3| 54
+!*!
+-----Users_End-----
+////`
+	return []byte(layout)
 }
