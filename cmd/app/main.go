@@ -22,14 +22,14 @@ func main() {
 	}
 	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "database.txt", DataConfig: data}
 	_, err := config.CreateDatabase()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	migrationName := flag.String("ma", "", "Name of the migration")
 	flag.Parse()
 	if migrationName != nil && *migrationName != "" {
 		config.CreateMigration(*migrationName)
-	}
-	if err != nil {
-		fmt.Println(err)
-		return
 	}
 
 }
