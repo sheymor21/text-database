@@ -52,14 +52,14 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 		encryptionKeyExist = true
 	}
 	if !utilities.IsFileExist(c.DatabaseName) {
-		if c.DataConfig == nil {
-			setDefaultData(c)
-		} else {
+		if c.DataConfig != nil {
+
 			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
 			newDb := db{name: c.DatabaseName, tables: getTables()}
 			addData(newDb, c.DataConfig)
 			return newDb, nil
 		}
+		setDefaultData(c)
 	}
 
 	return db{name: c.DatabaseName, tables: getTables()}, nil
