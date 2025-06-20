@@ -3,20 +3,36 @@ package pkg
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"text-database/pkg/utilities"
 	"time"
 )
 
 func (c DbConfig) CreateMigration(migrationName string) {
-	fileRoute := fmt.Sprintf("../../migrations/%s_%d.go", migrationName, time.Now().Unix())
+	path := utilities.Must(os.Getwd())
+	migrationPath := path + "/migrations"
+	constructorPath := migrationPath + "/constructor.go"
+	if IsFileNameExist(migrationPath, migrationName) {
+		panic("Migration already exist")
+	}
+	fileRoute := fmt.Sprintf("%s/%s_Migration_%d.go", migrationPath, migrationName, time.Now().Unix())
 	if !utilities.IsFileExist(fileRoute) {
 		code := migrationBuilder(c, migrationName)
-		utilities.ErrorHandler(os.MkdirAll("../../migrations", 0755))
+		utilities.ErrorHandler(os.MkdirAll(migrationPath, 0755))
 		utilities.ErrorHandler(os.WriteFile(fileRoute, code, 0755))
-		if !utilities.IsFileExist("../../migrations/constructor.go") {
-			constructorCode := constructorBuilder(c.DatabaseName)
-			utilities.ErrorHandler(os.WriteFile("../../migrations/constructor.go", constructorCode, 0755))
+		if !utilities.IsFileExist(constructorPath) {
+			constructorCode := constructorBuilder(migrationName)
+			utilities.ErrorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
+		} else {
+			err := os.Remove(constructorPath)
+			if err != nil {
+				return
+			}
+			constructorCode := constructorBuilder(migrationName)
+			utilities.ErrorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
+
 		}
 	}
 }
@@ -60,8 +76,16 @@ func generate%s() {
 	return []byte(builder.String())
 }
 
-func constructorBuilder(databaseName string) []byte {
+func constructorBuilder(migrationName string) []byte {
 	var builder strings.Builder
+	var namesBuilder strings.Builder
+	namesBuilder.WriteString("// Migrations Order:\n")
+	for i, m := range getMigrationsNames() {
+		names := fmt.Sprintf("// [%d] %s", i+1, m)
+		namesBuilder.WriteString(names)
+		namesBuilder.WriteString("\n")
+
+	}
 	imports := `
 package migrations
 
@@ -74,12 +98,16 @@ type table struct {
 }
 type value struct {
 	value []string
-}
-`
+}`
+	lastMigration := fmt.Sprintf(`
+func GenerateMigration() {
+	generate%s()
+}`, upperCase(migrationName))
 
 	builder.WriteString(imports)
+	builder.WriteString(namesBuilder.String())
 	builder.WriteString(types)
-	//builder.WriteString(functionCleanDatabase)
+	builder.WriteString(lastMigration)
 	return []byte(builder.String())
 }
 
@@ -153,4 +181,42 @@ func upperCase(s string) string {
 	sS[0] = strings.ToUpper(sS[0])
 	return strings.Join(sS, "")
 
+}
+func IsFileNameExist(path string, fileName string) bool {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		panic(err)
+	}
+	for _, entry := range entries {
+		name := strings.Split(entry.Name(), "_Migration_")
+		if name[0] == fileName {
+			return true
+		}
+	}
+	return false
+}
+
+func getMigrationsNames() []string {
+	path := utilities.Must(os.Getwd())
+	migrationPath := path + "/migrations"
+	entries, err := os.ReadDir(migrationPath)
+	if err != nil {
+		panic(err)
+	}
+	var fileNames []string
+	for _, entry := range entries {
+		if entry.Name() != "constructor.go" {
+			fileNames = append(fileNames, entry.Name())
+		}
+	}
+	sort.Slice(fileNames, func(i, j int) bool {
+		numberStrI := strings.Split(fileNames[i], "_Migration_")[1]
+		numberStrJ := strings.Split(fileNames[j], "_Migration_")[1]
+		numberStrI = strings.ReplaceAll(numberStrI, ".go", "")
+		numberStrJ = strings.ReplaceAll(numberStrJ, ".go", "")
+		numberI, _ := strconv.Atoi(numberStrI)
+		numberJ, _ := strconv.Atoi(numberStrJ)
+		return numberI < numberJ
+	})
+	return fileNames
 }
