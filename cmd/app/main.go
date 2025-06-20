@@ -24,7 +24,7 @@ func main() {
 	_, err := config.CreateDatabase()
 	migrationName := flag.String("ma", "", "Name of the migration")
 	flag.Parse()
-	if migrationName != nil {
+	if migrationName != nil && *migrationName != "" {
 		config.CreateMigration(*migrationName)
 	}
 	if err != nil {
