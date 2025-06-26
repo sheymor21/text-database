@@ -182,9 +182,8 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 }
 
 func TestTable(t *testing.T) {
-	for _, config := range testConfig {
-		t.Run(fmt.Sprintf("DbConfig: %s", config.DatabaseName), func(t *testing.T) {
-			suite.Run(t, &tableSuite{dbConfig: config})
-		})
-	}
+
+	t.Run("Test Set: Tables", func(t *testing.T) {
+		suite.Run(t, &tableSuite{})
+	})
 }

@@ -36,6 +36,18 @@ func (s *databaseSuite) TestDeleteTable() {
 		}
 	}
 }
+
+func (s *databaseWithStaticDataSuite) TestStaticData() {
+	tb, err := s.db.GetTableByName("DataTest")
+	if err != nil {
+		s.ErrFail(err)
+	}
+	rows := tb.GetRows()
+	if rows[1].Value != "|1| 1 |2| carlos |3| 32 " && rows[2].Value != "|1| 2 |2| jose |3| 23 " {
+		s.Fail("Expected |1| 1 |2| carlos |3| 32 and |1| 2 |2| jose |3| 23", fmt.Sprintf("Recibe: %s", rows))
+	}
+}
+
 func (s *databaseSuite) TestGetTableByName() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	if tb.GetName() != "-----Users-----" {
@@ -52,9 +64,15 @@ func (s *databaseSuite) TestGetTableByName_ReturnNameError() {
 }
 
 func TestDatabase(t *testing.T) {
-	for _, config := range testConfig {
-		t.Run(fmt.Sprintf("DbConfig: %s", config.DatabaseName), func(t *testing.T) {
-			suite.Run(t, &databaseSuite{dbConfig: config})
-		})
-	}
+	t.Run("TestSet: Database", func(t *testing.T) {
+		suite.Run(t, &databaseSuite{})
+	})
+
+	t.Run("TestSet: DatabaseWithEncryption", func(t *testing.T) {
+		suite.Run(t, &databaseWithEncryptionSuite{})
+	})
+
+	t.Run("TestSet: DatabaseWithStaticData", func(t *testing.T) {
+		suite.Run(t, &databaseWithStaticDataSuite{})
+	})
 }
