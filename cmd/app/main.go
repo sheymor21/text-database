@@ -11,13 +11,13 @@ func main() {
 		{
 			TableName: "Esto",
 			Columns:   []string{"name", "age"},
-			Values:    []pkg.Values{{"carlos", "32"}, {"jose", "23"}},
+			Values:    []pkg.Values{{"1", "carlos", "32"}, {"2", "jose", "23"}},
 		},
 
 		{
 			TableName: "Segunda Tabla",
 			Columns:   []string{"Nombre", "Direccion"},
-			Values:    []pkg.Values{{"Perez", "Manuguayabo"}},
+			Values:    []pkg.Values{{"1", "Perez", "Manuguayabo"}},
 		},
 	}
 	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "database.txt", DataConfig: data}
