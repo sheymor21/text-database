@@ -13,6 +13,7 @@ import (
 type Table interface {
 	AddValue(column string, value string) (Table, error)
 	AddValues(values []string) Table
+	addValuesIdGenerationOff(values []string) Table
 	UpdateTableName(newName string) Table
 	UpdateColumnName(oldColumnName string, newColumnName string) (Table, error)
 	UpdateValue(columnName string, id string, newValue string) (Table, error)
@@ -62,23 +63,10 @@ func (table table) GetName() string {
 	return table.name
 }
 func (table table) AddValues(values []string) Table {
-	rows := make([]Row, len(values))
-	for i, v := range values {
-		rows[i] = Row{Value: v}
-	}
-	s := valuesBuilder(table.rawTable, rows)
-	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
-	tables := getTables()
-	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
-			tables[i] = table
-			break
-		}
-	}
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
-	return table
+	return addValues(table, values, true)
+}
+func (table table) addValuesIdGenerationOff(values []string) Table {
+	return addValues(table, values, false)
 }
 func (table table) GetColumns() []string {
 	return getColumns(table.rawTable)
@@ -345,20 +333,22 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 	co = append(co, "\n!*!")
 	return strings.Join(co, ""), nil
 }
-func valuesBuilder(table string, values []Row) string {
+func valuesBuilder(table string, values []Row, idGenerate bool) string {
 	co := getColumns(table)
 	co = utilities.RemoveEmptyIndex(co)
 	count := len(co)
-	co[0] = "[1]"
-	co[1] = uuid.New().String()
 
 	for i := 0; i < count; i += 2 {
 		co[i] = strings.ReplaceAll(co[i], "[", "|")
 		co[i] = strings.ReplaceAll(co[i], "]", "|")
 	}
 
-	n := 3
+	n := 1
 	for _, r := range values {
+		if idGenerate && n == 1 {
+			co[1] = uuid.New().String()
+			n = n + 2
+		}
 
 		if n > count {
 			break
@@ -369,4 +359,23 @@ func valuesBuilder(table string, values []Row) string {
 	}
 	co = append(co, "\n!*!")
 	return strings.Join(co, " ")
+}
+func addValues(table table, values []string, idGenerate bool) table {
+	rows := make([]Row, len(values))
+	for i, v := range values {
+		rows[i] = Row{Value: v}
+	}
+	s := valuesBuilder(table.rawTable, rows, idGenerate)
+	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
+	tables := getTables()
+	for i, t := range tables {
+		if strings.Contains(t.name, table.name) {
+			tables[i] = table
+			break
+		}
+	}
+	newTable := addTableFrontiers(tables)
+	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	return table
 }

@@ -52,14 +52,15 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 		encryptionKeyExist = true
 	}
 	if !utilities.IsFileExist(c.DatabaseName) {
-		if c.DataConfig != nil {
-
-			utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
-			newDb := db{name: c.DatabaseName, tables: getTables()}
-			addData(newDb, c.DataConfig)
-			return newDb, nil
+		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
+		if c.DataConfig == nil {
+			setDefaultData(c)
 		}
-		setDefaultData(c)
+
+	}
+	if c.DataConfig != nil {
+		newDb := setDatabaseData(c)
+		return newDb, nil
 	}
 
 	return db{name: c.DatabaseName, tables: getTables()}, nil
@@ -148,7 +149,7 @@ func tableBuilder(table table) string {
 		"\n!*!"+
 		"\n-----%s_End-----\n////", table.name, columnsRaw, table.name)
 	if table.values != nil {
-		values := valuesBuilder(tableRaw, table.values)
+		values := valuesBuilder(tableRaw, table.values, true)
 		tableRaw = strings.Replace(tableRaw, "!*!", values, 1)
 	}
 	return tableRaw
@@ -211,25 +212,37 @@ func checkDataConfig(d []DataConfig) error {
 	for _, v := range d {
 		for _, iv := range v.Values {
 
-			if len(v.Columns) != len(iv) {
-				message := fmt.Sprintf("columns and values must have the same length, %d != %d, table: %s", len(v.Columns), len(iv), v.TableName)
+			if v.TableName == "" {
+				return errors.New("table name is required")
+			}
+			if len(v.Columns) == 0 {
+				return errors.New("columns are required")
+			}
+
+			l := len(v.Columns) + 1
+			if l != len(iv) {
+				message := fmt.Sprintf("columns and values must have the same length, colums:%d != values:%d, table: %s", l, len(iv), v.TableName)
 				return errors.New(message)
 			}
 		}
-		if v.TableName == "" {
-			return errors.New("table name is required")
-		}
-		if len(v.Columns) == 0 {
-			return errors.New("columns are required")
-		}
+
 	}
 	return nil
 }
 func addData(db db, d []DataConfig) {
 	for _, v := range d {
-		tb := db.NewTable(v.TableName, v.Columns)
-		for _, iv := range v.Values {
-			tb = tb.AddValues(iv)
+		if !isTableInDatabase(v) {
+			tb := db.NewTable(v.TableName, v.Columns)
+			for _, iv := range v.Values {
+				tb = tb.addValuesIdGenerationOff(iv)
+			}
+		} else {
+			tb, _ := db.GetTableByName(v.TableName)
+			for _, iv := range v.Values {
+				if !areValuesInDatabase(v.TableName, iv[0]) {
+					tb.addValuesIdGenerationOff(iv)
+				}
+			}
 		}
 	}
 }
@@ -242,7 +255,32 @@ func setDefaultData(c DbConfig) {
 		encryptionKeyExist = false
 	}
 }
+func isTableInDatabase(config DataConfig) bool {
+	_, err := getTableByName(config.TableName)
+	if err != nil {
+		return false
+	}
+	return true
+}
 
+func areValuesInDatabase(tableName string, value string) bool {
+
+	tb, err := getTableByName(tableName)
+	if err != nil {
+		return false
+	}
+	_, errR := tb.GetRowById(value)
+	if errR != nil {
+		return false
+	}
+	return true
+}
+
+func setDatabaseData(c DbConfig) db {
+	newDb := db{name: c.DatabaseName, tables: getTables()}
+	addData(newDb, c.DataConfig)
+	return newDb
+}
 func getLayout() []byte {
 	layout := `////
 -----Users-----
