@@ -57,13 +57,32 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 			setDefaultData(c)
 		}
 
+	} else {
+		data := string(utilities.Must(os.ReadFile(c.DatabaseName)))
+		if !IsEncode(data) && encryptionKeyExist {
+			EncodeAndSave(data)
+		}
 	}
+
 	if c.DataConfig != nil {
 		newDb := setDatabaseData(c)
 		return newDb, nil
 	}
 
 	return db{name: c.DatabaseName, tables: getTables()}, nil
+}
+func (c DbConfig) RemoveEncryption() error {
+	if dbName == "" {
+		return &NotFoundError{itemName: "Database"}
+	}
+	if strings.TrimSpace(c.EncryptionKey) != "" {
+		data := string(utilities.Must(os.ReadFile(c.DatabaseName)))
+		if IsEncode(data) {
+			DecodeAndSave(data)
+			return nil
+		}
+	}
+	return &NotFoundError{itemName: "EncryptionKey"}
 }
 func (d db) GetName() string {
 	return dbName
@@ -244,12 +263,10 @@ func addData(db db, d []DataConfig) {
 	}
 }
 func setDefaultData(c DbConfig) {
-	if strings.TrimSpace(c.EncryptionKey) != "" {
-		encodeData := utilities.Must(globalEncoderKey.Encode(string(getLayout())))
-		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte(encodeData), 0644))
+	if encryptionKeyExist {
+		EncodeAndSave(string(getLayout()))
 	} else {
 		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
-		encryptionKeyExist = false
 	}
 }
 func isTableInDatabase(config DataConfig) bool {

@@ -96,7 +96,24 @@ func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
 func (e *SecureTextEncoder) ReadAndDecode(dbName string) string {
 	data := string(utilities.Must(os.ReadFile(dbName)))
 	if encryptionKeyExist {
-		data = utilities.Must(e.Decode(string(data)))
+		data = utilities.Must(e.Decode(data))
 	}
 	return data
+}
+
+func IsEncode(text string) bool {
+	if strings.HasPrefix(text, "ENG") {
+		return true
+	}
+	return false
+}
+
+func EncodeAndSave(data string) {
+	encodeData := utilities.Must(globalEncoderKey.Encode(data))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(encodeData), 0644))
+}
+
+func DecodeAndSave(data string) {
+	decodeData := utilities.Must(globalEncoderKey.Decode(data))
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(decodeData), 0644))
 }
