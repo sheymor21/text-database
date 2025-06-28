@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 	"text-database/pkg/utilities"
 )
 
@@ -55,13 +56,15 @@ func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
 	ciphertext := gcm.Seal(nonce, nonce, []byte(plainText), nil)
 
 	// Convert to base64 for storage
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+	b64 := base64.StdEncoding.EncodeToString(ciphertext)
+	//Add Prefix
+	prefix := "ENG" + b64
+	return prefix, nil
+
 }
 
 func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
-	if !encryptionKeyExist {
-		return encodedText, nil
-	}
+	encodedText = strings.Replace(encodedText, "ENG", "", 1)
 	ciphertext, err := base64.StdEncoding.DecodeString(encodedText)
 	if err != nil {
 		return "", err
@@ -91,7 +94,9 @@ func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
 	return string(plaintext), nil
 }
 func (e *SecureTextEncoder) ReadAndDecode(dbName string) string {
-	data := utilities.Must(os.ReadFile(dbName))
-	encodeData := utilities.Must(e.Decode(string(data)))
-	return encodeData
+	data := string(utilities.Must(os.ReadFile(dbName)))
+	if encryptionKeyExist {
+		data = utilities.Must(e.Decode(string(data)))
+	}
+	return data
 }
