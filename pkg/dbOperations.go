@@ -97,7 +97,6 @@ func (d db) addTable(table table) Table {
 	raw := tableBuilder(table)
 	dataByte = append(dataByte, []byte(raw)...)
 	dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
-
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
 	return utilities.Must(d.GetTableByName(table.name))
 
@@ -112,9 +111,7 @@ func (d db) DeleteTable(tableName string) {
 		}
 	}
 
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 }
 func getTableByName(tableName string) (table, error) {
 	tables := getTables()

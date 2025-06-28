@@ -51,9 +51,7 @@ func (table table) AddValue(column string, value string) (Table, error) {
 			break
 		}
 	}
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table, nil
 }
 func (table table) PrintTable() {
@@ -89,9 +87,7 @@ func (table table) UpdateTableName(newName string) Table {
 			break
 		}
 	}
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table
 }
 func (table table) UpdateColumnName(oldColumnName string, newColumnName string) (Table, error) {
@@ -114,9 +110,7 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 		}
 	}
 
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table, nil
 
 }
@@ -150,9 +144,7 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 			break
 		}
 	}
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table, nil
 }
 func (table table) GetRows() Rows {
@@ -189,9 +181,7 @@ func (table table) DeleteRow(id string) (Table, error) {
 		}
 	}
 
-	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table, nil
 }
 func (table table) DeleteColumn(columnName string) (Table, error) {
@@ -223,9 +213,7 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 			break
 		}
 	}
-	tablesWithFrontier := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(tablesWithFrontier))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	saveTables(tables)
 	return table, nil
 }
 func (r Rows) String() string {
@@ -374,8 +362,12 @@ func addValues(table table, values []string, idGenerate bool) table {
 			break
 		}
 	}
+	saveTables(tables)
+	return table
+}
+
+func saveTables(tables []table) {
 	newTable := addTableFrontiers(tables)
 	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
 	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
-	return table
 }
