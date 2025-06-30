@@ -24,6 +24,7 @@ type Table interface {
 	GetColumns() []string
 	PrintTable()
 	GetName() string
+	Search(column string, value string) (Row, error)
 }
 
 type Rows []Row
@@ -215,6 +216,18 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 	}
 	saveTables(tables)
 	return table, nil
+}
+func (table table) Search(column string, value string) (Row, error) {
+	rows := table.GetRows()
+	s := strings.Split(rows[0].Value, " ")
+	index := slices.Index(s, column)
+	for i := 1; i < len(rows); i++ {
+		row := strings.Split(rows[i].Value, " ")
+		if row[index] == value {
+			return rows[i], nil
+		}
+	}
+	return Row{}, &NotFoundError{itemName: value}
 }
 func (r Rows) String() string {
 	s := make([]string, len(r))

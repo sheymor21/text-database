@@ -180,6 +180,13 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 		s.ErrFail(err)
 	}
 }
+func (s *tableSuite) TestSearch() {
+	tb, _ := s.db.GetTableByName("Users")
+	result, _ := tb.Search("age", "54")
+	if result.Value != "|1| 2 |2| juan |3| 54" {
+		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", result))
+	}
+}
 
 func TestTable(t *testing.T) {
 
