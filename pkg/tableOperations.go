@@ -365,9 +365,10 @@ func addValues(table table, values []string, idGenerate bool) table {
 	saveTables(tables)
 	return table
 }
-
 func saveTables(tables []table) {
 	newTable := addTableFrontiers(tables)
-	newTableEncode := utilities.Must(globalEncoderKey.Encode(newTable))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTableEncode), 0666))
+	if encryptionKeyExist {
+		newTable = utilities.Must(globalEncoderKey.Encode(newTable))
+	}
+	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
 }

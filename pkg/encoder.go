@@ -30,9 +30,6 @@ func NewSecureTextEncoder(secretKey string) *SecureTextEncoder {
 }
 
 func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
-	if !encryptionKeyExist {
-		return plainText, nil
-	}
 	// Create cipher block
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
