@@ -16,6 +16,7 @@ type Db interface {
 	PrintTables()
 	NewTable(name string, columns []string) Table
 	DeleteTable(tableName string)
+	AddForeignKey(key ForeignKey) error
 }
 type db struct {
 	name   string
@@ -31,6 +32,13 @@ type DbConfig struct {
 	EncryptionKey string
 	DatabaseName  string
 	DataConfig    []DataConfig
+}
+
+type ForeignKey struct {
+	TableName         string
+	ColumnName        string
+	ForeignTableName  string
+	ForeignColumnName string
 }
 
 var encryptionKeyExist bool
@@ -109,8 +117,45 @@ func (d db) NewTable(name string, columns []string) Table {
 func (d db) GetTableByName(name string) (Table, error) {
 	return getTableByName(name)
 }
+func (d db) AddForeignKey(key ForeignKey) error {
+	tb, errTb := getTableByName(key.TableName)
+	if errTb != nil {
+		return &NotFoundError{itemName: "Table: " + key.TableName}
+	}
+	tbf, errTbf := getTableByName(key.ForeignTableName)
+	if errTbf != nil {
+		return &NotFoundError{itemName: "Table: " + key.ForeignTableName}
+	}
+
+	tbRows := getValues(tb.rawTable)
+	tbfRows := getValues(tbf.rawTable)
+
+	tbS := strings.Split(tbRows[0].Value, " ")
+	tbfS := strings.Split(tbfRows[0].Value, " ")
+
+	if !slices.Contains(tbS, key.ColumnName) {
+		msg := fmt.Sprintf("Column: %s does not exist in table: %s", key.ColumnName, key.TableName)
+		return &NotFoundError{itemName: msg}
+	}
+	if !slices.Contains(tbfS, key.ForeignColumnName) {
+		msg := fmt.Sprintf("Column: %s does not exist in table: %s", key.ForeignColumnName, key.ForeignTableName)
+		return &NotFoundError{itemName: msg}
+	}
+	if !isTableInDatabase("Links") {
+		data := string(utilities.Must(os.ReadFile(dbName)))
+		linkAdded := string(linkTableLayout()) + data
+		utilities.ErrorHandler(os.WriteFile(dbName, []byte(linkAdded), 0666))
+	}
+
+	linkTb, _ := getTableByName("Links")
+	err := validateForeignKey(linkTb, key)
+	if err != nil {
+		return err
+	}
+	linkTb.AddValues(key.TableName, key.ColumnName, key.ForeignTableName, key.ForeignColumnName)
+	return nil
+}
 func (d db) addTable(table table) Table {
-	//data := utilities.Must(os.ReadFile(dbName))
 	data := globalEncoderKey.ReadAndDecode(dbName)
 	dataByte := []byte(data)
 	raw := tableBuilder(table)
@@ -306,6 +351,29 @@ func getLayout() []byte {
 |1| 2 |2| juan |3| 54
 !*!
 -----Users_End-----
+////`
+	return []byte(layout)
+}
+func validateForeignKey(linkTb table, key ForeignKey) error {
+	linkRows := getValues(linkTb.rawTable)
+	for i := 1; i < len(linkRows); i++ {
+		s := strings.Split(linkRows[i].Value, "|")
+		s = utilities.RemoveEmptyIndex(s)
+		if strings.TrimSpace(s[3]) == key.TableName &&
+			strings.TrimSpace(s[5]) == key.ColumnName &&
+			strings.TrimSpace(s[7]) == key.ForeignTableName &&
+			strings.TrimSpace(s[9]) == key.ForeignColumnName {
+			return errors.New("foreign Key already exist")
+		}
+	}
+	return nil
+}
+func linkTableLayout() []byte {
+	layout := `////
+-----Links-----
+[1] id [2] table1 [3] columnLink1 [3] table2 [4] columnLink2
+!*!
+-----Links_End-----
 ////`
 	return []byte(layout)
 }
