@@ -37,7 +37,7 @@ func (s *tableSuite) TestAddValue() {
 }
 func (s *tableSuite) TestAddValues() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb = tb.AddValues([]string{"Jose", "20"})
+	tb = tb.AddValues("Jose", "20")
 	rows := tb.GetRows()
 	id := getId(rows[3].Value)
 	if rows[3].Value != fmt.Sprintf("|1| %s |2| Jose |3| 20 ", id) {

@@ -12,7 +12,7 @@ import (
 
 type Table interface {
 	AddValue(column string, value string) (Table, error)
-	AddValues(values []string) Table
+	AddValues(values ...string) Table
 	addValuesIdGenerationOff(values []string) Table
 	UpdateTableName(newName string) Table
 	UpdateColumnName(oldColumnName string, newColumnName string) (Table, error)
@@ -61,7 +61,7 @@ func (table table) PrintTable() {
 func (table table) GetName() string {
 	return table.name
 }
-func (table table) AddValues(values []string) Table {
+func (table table) AddValues(values ...string) Table {
 	return addValues(table, values, true)
 }
 func (table table) addValuesIdGenerationOff(values []string) Table {
