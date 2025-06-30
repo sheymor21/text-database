@@ -115,8 +115,11 @@ func (d db) addTable(table table) Table {
 	dataByte := []byte(data)
 	raw := tableBuilder(table)
 	dataByte = append(dataByte, []byte(raw)...)
-	dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
+	if encryptionKeyExist {
+		dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
+		utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
+	}
+	utilities.ErrorHandler(os.WriteFile(dbName, dataByte, 0666))
 	return utilities.Must(d.GetTableByName(table.name))
 
 }
