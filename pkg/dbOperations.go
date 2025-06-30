@@ -247,7 +247,7 @@ func checkDataConfig(d []DataConfig) error {
 }
 func addData(db db, d []DataConfig) {
 	for _, v := range d {
-		if !isTableInDatabase(v) {
+		if !isTableInDatabase(v.TableName) {
 			tb := db.NewTable(v.TableName, v.Columns)
 			for _, iv := range v.Values {
 				tb = tb.addValuesIdGenerationOff(iv)
@@ -269,8 +269,8 @@ func setDefaultData(c DbConfig) {
 		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
 	}
 }
-func isTableInDatabase(config DataConfig) bool {
-	_, err := getTableByName(config.TableName)
+func isTableInDatabase(tableName string) bool {
+	_, err := getTableByName(tableName)
 	if err != nil {
 		return false
 	}
