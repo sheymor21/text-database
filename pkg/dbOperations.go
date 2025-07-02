@@ -17,6 +17,7 @@ type Db interface {
 	NewTable(name string, columns []string) Table
 	DeleteTable(tableName string)
 	AddForeignKey(key ForeignKey) error
+	AddForeignKeys(keys []ForeignKey) error
 }
 type db struct {
 	name   string
@@ -153,6 +154,15 @@ func (d db) AddForeignKey(key ForeignKey) error {
 		return err
 	}
 	linkTb.AddValues(key.TableName, key.ColumnName, key.ForeignTableName, key.ForeignColumnName)
+	return nil
+}
+func (d db) AddForeignKeys(keys []ForeignKey) error {
+	for _, key := range keys {
+		err := d.AddForeignKey(key)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 func (d db) addTable(table table) Table {
@@ -296,17 +306,26 @@ func checkDataConfig(d []DataConfig) error {
 func addData(db db, d []DataConfig) {
 	for _, v := range d {
 		if !isTableInDatabase(v.TableName) {
-			tb := db.NewTable(v.TableName, v.Columns)
-			for _, iv := range v.Values {
-				tb = tb.addValuesIdGenerationOff(iv)
-			}
+			generateStaticData(db, v)
 		} else {
-			tb, _ := db.GetTableByName(v.TableName)
-			for _, iv := range v.Values {
-				if !areValuesInDatabase(v.TableName, iv[0]) {
-					tb.addValuesIdGenerationOff(iv)
-				}
-			}
+			addStaticData(db, v)
+		}
+	}
+}
+
+func addStaticData(db db, v DataConfig) {
+	tb, _ := db.GetTableByName(v.TableName)
+	for _, iv := range v.Values {
+		if !areValuesInDatabase(v.TableName, iv[0]) {
+			tb.addValuesIdGenerationOff(iv)
+		}
+	}
+}
+func generateStaticData(db db, v DataConfig) {
+	tb := db.NewTable(v.TableName, v.Columns)
+	if v.Values != nil || len(v.Values) != 0 {
+		for _, iv := range v.Values {
+			tb = tb.addValuesIdGenerationOff(iv)
 		}
 	}
 }
