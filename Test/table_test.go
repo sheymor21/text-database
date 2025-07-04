@@ -182,7 +182,7 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 }
 func (s *tableSuite) TestSearch() {
 	tb, _ := s.db.GetTableByName("Users")
-	result, _ := tb.Search("age", "54")
+	result, _ := tb.SearchOne("age", "54")
 	if result.Value != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", result))
 	}
