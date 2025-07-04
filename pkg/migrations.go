@@ -116,11 +116,11 @@ func migrationTableBuilder(c DbConfig) string {
 	tables := getTables(false)
 
 	for _, t := range tables {
-		tableName := strings.ReplaceAll(t.name, "-", "")
+		tableName := strings.ReplaceAll(t.nameRaw, "-", "")
 		columns := migrationColumnBuilder(t.columns)
 		var values string
 		if c.DataConfig != nil {
-			values = migrationValuesBuilder(t.name, c.DataConfig)
+			values = migrationValuesBuilder(t.nameRaw, c.DataConfig)
 		}
 		//values := "[]value{}"
 		tableStr := fmt.Sprintf(`{

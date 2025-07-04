@@ -39,7 +39,7 @@ type ComplexRow struct {
 	Rows  Rows
 }
 type table struct {
-	name     string
+	nameRaw  string
 	columns  []string
 	values   []Row
 	rawTable string
@@ -54,7 +54,7 @@ func (table table) AddValue(column string, value string) (Table, error) {
 
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
 	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
+		if strings.Contains(t.nameRaw, table.nameRaw) {
 			tables[i] = table
 			break
 		}
@@ -66,7 +66,7 @@ func (table table) PrintTable() {
 	fmt.Println(table.rawTable)
 }
 func (table table) GetName() string {
-	return table.name
+	return table.nameRaw
 }
 func (table table) AddValues(values ...string) Table {
 	return addValues(table, values, true)
@@ -78,19 +78,19 @@ func (table table) GetColumns() []string {
 	return getColumns(table.rawTable)
 }
 func (table table) UpdateTableName(newName string) Table {
-	formatName := strings.Replace(table.name, "-----", "", 2)
+	formatName := strings.Replace(table.nameRaw, "-----", "", 2)
 	formatName = formatName + "_End"
 	formatName = fmt.Sprintf("-----%s-----", formatName)
 	rawNewName := fmt.Sprintf("-----%s-----", newName)
 	rawNewNameEnd := fmt.Sprintf("-----%s-----", newName+"_End")
 
-	table.name = rawNewName
-	table.rawTable = strings.Replace(table.rawTable, table.name, rawNewName, 1)
+	table.nameRaw = rawNewName
+	table.rawTable = strings.Replace(table.rawTable, table.nameRaw, rawNewName, 1)
 	table.rawTable = strings.Replace(table.rawTable, formatName, rawNewNameEnd, 1)
 	tables := getTables(false)
 	for i, t := range tables {
-		if t.name == table.name {
-			tables[i].name = table.name
+		if t.nameRaw == table.nameRaw {
+			tables[i].nameRaw = table.nameRaw
 			tables[i] = table
 			break
 		}
@@ -112,7 +112,7 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 
 	table.rawTable = strings.Replace(table.rawTable, oldColumnName, newColumnName, 1)
 	for i, t := range tables {
-		if t.name == table.name {
+		if t.nameRaw == table.nameRaw {
 			tables[i] = table
 			break
 		}
@@ -147,7 +147,7 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 
 	tables := getTables(false)
 	for i, t := range tables {
-		if t.name == table.name {
+		if t.nameRaw == table.nameRaw {
 			tables[i].rawTable = table.rawTable
 			break
 		}
@@ -183,7 +183,7 @@ func (table table) DeleteRow(id string) (Table, error) {
 
 	tables := getTables(false)
 	for i, t := range tables {
-		if t.name == table.name {
+		if t.nameRaw == table.nameRaw {
 			tables[i] = table
 			break
 		}
@@ -216,7 +216,7 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 	}
 	tables := getTables(false)
 	for i, t := range tables {
-		if t.name == table.name {
+		if t.nameRaw == table.nameRaw {
 			tables[i] = table
 			break
 		}
@@ -395,7 +395,7 @@ func addValues(table table, values []string, idGenerate bool) table {
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
 	tables := getTables(false)
 	for i, t := range tables {
-		if strings.Contains(t.name, table.name) {
+		if strings.Contains(t.nameRaw, table.nameRaw) {
 			tables[i] = table
 			break
 		}

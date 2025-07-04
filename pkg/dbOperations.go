@@ -175,14 +175,14 @@ func (d db) addTable(table table) Table {
 		utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
 	}
 	utilities.ErrorHandler(os.WriteFile(dbName, dataByte, 0666))
-	return utilities.Must(d.GetTableByName(table.name))
+	return utilities.Must(d.GetTableByName(table.nameRaw))
 
 }
 func (d db) DeleteTable(tableName string) {
 	tables := getTables(true)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 	for i, t := range tables {
-		if t.name == tableNameRaw {
+		if t.nameRaw == tableNameRaw {
 			tables = slices.Delete(tables, i, i+1)
 			break
 		}
@@ -221,9 +221,9 @@ func getTables(strConv bool) []table {
 func tableBuilder(table table) string {
 	columnsRaw := columnsBuilder(table.columns)
 	var builder strings.Builder
-	name := fmt.Sprintf("\n-----%s-----\n", table.name)
+	name := fmt.Sprintf("\n-----%s-----\n", table.nameRaw)
 	column := fmt.Sprintf("[1] id %s", columnsRaw)
-	end := fmt.Sprintf("\n!*!\n-----%s_End-----\n////", table.name)
+	end := fmt.Sprintf("\n!*!\n-----%s_End-----\n////", table.nameRaw)
 	builder.WriteString(name)
 	builder.WriteString(column)
 	builder.WriteString(end)
