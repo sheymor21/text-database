@@ -30,7 +30,7 @@ func (s *tableSuite) TestAddValue() {
 	tb, _ = tb.AddValue("name", "test")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
-	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| null ", id) {
+	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| null", id) {
 		s.Fail(fmt.Sprintf("Expected |1| %s |2| test |3| null", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 
@@ -40,7 +40,7 @@ func (s *tableSuite) TestAddValues() {
 	tb = tb.AddValues("test", "20")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
-	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| 20 ", id) {
+	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| 20", id) {
 		s.Fail(fmt.Sprintf("Expected |1| %s |2| test |3| 20", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
@@ -221,8 +221,11 @@ func getIdAndIndex(r pkg.Rows) (string, int) {
 }
 
 func TestTable(t *testing.T) {
-
 	t.Run("Test Set: Tables", func(t *testing.T) {
 		suite.Run(t, &tableSuite{})
+	})
+
+	t.Run("Test Set: TablesWithStaticData", func(t *testing.T) {
+		suite.Run(t, &tableSuiteWithStaticData{})
 	})
 }

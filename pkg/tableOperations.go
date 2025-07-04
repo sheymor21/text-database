@@ -336,7 +336,7 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 	}
 	count := len(co)
 	co[0] = "[1]"
-	co[1] = " " + uuid.New().String() + " "
+	co[1] = uuid.New().String()
 
 	for i := 0; i < count; i += 2 {
 		co[i] = strings.ReplaceAll(co[i], "[", "|")
@@ -346,13 +346,14 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 	for i := 3; i < count; i += 2 {
 		if co[i] == columnName {
 			value = strings.ReplaceAll(value, " ", "U+0020")
-			co[i] = " " + value + " "
+			co[i] = value
 		} else {
-			co[i] = " null "
+			co[i] = "null"
 		}
 	}
-	co = append(co, "\n!*!")
-	return strings.Join(co, ""), nil
+	union := strings.Join(co, " ")
+	result := union + "\n!*!"
+	return result, nil
 }
 func valuesBuilder(table string, values []Row, idGenerate bool) string {
 	co := getColumns(table)
@@ -378,13 +379,17 @@ func valuesBuilder(table string, values []Row, idGenerate bool) string {
 		n = n + 2
 
 	}
-	co = append(co, "\n!*!")
-	return strings.Join(co, " ")
+	union := strings.Join(co, " ")
+	result := union + "\n!*!"
+	return result
 }
 func addValues(table table, values []string, idGenerate bool) table {
 	rows := make([]Row, len(values))
 	for i, v := range values {
-		rows[i] = Row{value: v}
+		rows[i] = Row{
+			columns: table.columns,
+			value:   v,
+		}
 	}
 	s := valuesBuilder(table.rawTable, rows, idGenerate)
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)

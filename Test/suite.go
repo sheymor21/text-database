@@ -20,6 +20,10 @@ type tableSuite struct {
 	db       pkg.Db
 	dbConfig pkg.DbConfig
 }
+
+type tableSuiteWithStaticData struct {
+	tableSuite
+}
 type databaseWithEncryptionSuite struct {
 	databaseSuite
 }
@@ -47,7 +51,42 @@ func (s *tableSuite) SetupTest() {
 func (s *tableSuite) TearDownTest() {
 	utilities.ErrorHandler(os.Remove("testDb.txt"))
 }
+func (s *tableSuiteWithStaticData) SetupTest() {
+	dataConfig := []pkg.DataConfig{
+		{
+			TableName: "Users",
+			Columns:   []string{"name", "age"},
+			Values: []pkg.Values{
+				{"1", "pedro", "32"},
+				{"2", "juan", "54"},
+				{"3", "carlos", "62"},
+				{"4", "manuel", "54"},
+			},
+		},
+		{
+			TableName: "DataTest",
+			Columns:   []string{"name", "age"},
+			Values:    []pkg.Values{{"1", "carlos", "32"}, {"2", "jose", "23"}},
+		},
+		{
+			TableName: "Houses",
+			Columns:   []string{"direction", "id_owner"},
+			Values: []pkg.Values{
+				{"1", "pedro avenue", "1"},
+				{"2", "pedro avenue", "1"},
+				{"3", "juan avenue", "2"},
+				{"4", "carlos avenue", "3"},
+			},
+		},
+	}
 
+	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "testDbTableWithStaticData.txt", DataConfig: dataConfig}
+	s.db, _ = config.CreateDatabase()
+}
+
+func (s *tableSuiteWithStaticData) TearDownTest() {
+	utilities.ErrorHandler(os.Remove("testDbTableWithStaticData.txt"))
+}
 func (s *databaseWithEncryptionSuite) SetupTest() {
 	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "testDbWithEncryption.txt"}
 	s.db, _ = config.CreateDatabase()
