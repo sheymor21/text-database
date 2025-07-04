@@ -128,11 +128,11 @@ func (d db) AddForeignKey(key ForeignKey) error {
 		return &NotFoundError{itemName: "Table: " + key.ForeignTableName}
 	}
 
-	tbRows := getValues(tb.rawTable)
-	tbfRows := getValues(tbf.rawTable)
+	tbRows := getRows(tb.rawTable)
+	tbfRows := getRows(tbf.rawTable)
 
-	tbS := strings.Split(tbRows[0].Value, " ")
-	tbfS := strings.Split(tbfRows[0].Value, " ")
+	tbS := strings.Split(tbRows[0].value, " ")
+	tbfS := strings.Split(tbfRows[0].value, " ")
 
 	if !slices.Contains(tbS, key.ColumnName) {
 		msg := fmt.Sprintf("Column: %s does not exist in table: %s", key.ColumnName, key.TableName)
@@ -211,7 +211,7 @@ func getTables() []table {
 	tables := make([]table, len(sif))
 	for i, t := range sif {
 		name := getTableName(t)
-		values := getValues(t)
+		values := getRows(t)
 		tables[i] = table{name, getColumns(t), values, t}
 	}
 	return tables
@@ -261,12 +261,14 @@ func getColumns(rawTable string) []string {
 	columnsSlice := strings.Split(columns, " ")
 	return columnsSlice
 }
-func getValues(table string) []Row {
+func getRows(table string) []Row {
 	row := strings.Split(table, "\n")
-	newRow := make([]Row, len(row)-5)
+	newRow := make([]Row, len(row)-6)
+	columns := getColumns(table)
 	n := 0
-	for i := 2; i < len(row)-3; i++ {
-		newRow[n].Value = row[i]
+	for i := 3; i < len(row)-3; i++ {
+		newRow[n].columns = columns
+		newRow[n].value = row[i]
 		n++
 	}
 	return newRow
@@ -312,7 +314,6 @@ func addData(db db, d []DataConfig) {
 		}
 	}
 }
-
 func addStaticData(db db, v DataConfig) {
 	tb, _ := db.GetTableByName(v.TableName)
 	for _, iv := range v.Values {
@@ -343,7 +344,6 @@ func isTableInDatabase(tableName string) bool {
 	}
 	return true
 }
-
 func areValuesInDatabase(tableName string, value string) bool {
 
 	tb, err := getTableByName(tableName)
@@ -356,7 +356,6 @@ func areValuesInDatabase(tableName string, value string) bool {
 	}
 	return true
 }
-
 func setDatabaseData(c DbConfig) db {
 	newDb := db{name: c.DatabaseName, tables: getTables()}
 	addData(newDb, c.DataConfig)
@@ -368,15 +367,17 @@ func getLayout() []byte {
 [1] id [2] name [3] age
 |1| 1 |2| pedro |3| 32
 |1| 2 |2| juan |3| 54
+|1| 3 |2| carlos |3| 62
+|1| 4 |2| manuel |3| 54
 !*!
 -----Users_End-----
 ////`
 	return []byte(layout)
 }
 func validateForeignKey(linkTb table, key ForeignKey) error {
-	linkRows := getValues(linkTb.rawTable)
+	linkRows := getRows(linkTb.rawTable)
 	for i := 1; i < len(linkRows); i++ {
-		s := strings.Split(linkRows[i].Value, "|")
+		s := strings.Split(linkRows[i].value, "|")
 		s = utilities.RemoveEmptyIndex(s)
 		if strings.TrimSpace(s[3]) == key.TableName &&
 			strings.TrimSpace(s[5]) == key.ColumnName &&

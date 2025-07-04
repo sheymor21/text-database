@@ -30,6 +30,9 @@ type Table interface {
 type Rows []Row
 type Row struct {
 	Value string
+	columns []string
+	value   string
+}
 }
 type table struct {
 	name     string
@@ -126,10 +129,10 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 			if rowErr != nil {
 				return nil, rowErr
 			}
-			rowSlice := strings.Split(row.Value, "|")
+			rowSlice := strings.Split(row.value, "|")
 			rowSlice[i+1] = " " + newValue + " "
-			row.Value = strings.Join(rowSlice, "|")
-			updateTable, err := updateRow(table.rawTable, id, row.Value)
+			row.value = strings.Join(rowSlice, "|")
+			updateTable, err := updateRow(table.rawTable, id, row.value)
 			if err != nil {
 				return nil, err
 			}
@@ -149,13 +152,13 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 	return table, nil
 }
 func (table table) GetRows() Rows {
-	values := getValues(table.rawTable)
+	values := getRows(table.rawTable)
 	return values
 }
 func (table table) GetRowById(id string) (Row, error) {
-	rows := getValues(table.rawTable)
-	for i := 1; i < len(rows); i++ {
-		s := strings.Split(rows[i].Value, " ")
+	rows := getRows(table.rawTable)
+	for i, row := range rows {
+		s := strings.Split(row.value, " ")
 		if strings.TrimSpace(s[1]) == id {
 			return rows[i], nil
 		}
@@ -168,7 +171,7 @@ func (table table) DeleteRow(id string) (Table, error) {
 		return nil, err
 	}
 	rowSlice := strings.Split(table.rawTable, "\n")
-	index := slices.Index(rowSlice, row.Value)
+	index := slices.Index(rowSlice, row.value)
 	newRow := slices.Replace(rowSlice, index, index+1, "")
 	newRow = utilities.RemoveEmptyIndex(newRow)
 	rowString := strings.Join(newRow, "\n")
@@ -217,14 +220,13 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 	saveTables(tables)
 	return table, nil
 }
-func (table table) Search(column string, value string) (Row, error) {
+func (table table) SearchOne(column string, value string) (Row, error) {
 	rows := table.GetRows()
-	s := strings.Split(rows[0].Value, " ")
-	index := slices.Index(s, column)
-	for i := 1; i < len(rows); i++ {
-		row := strings.Split(rows[i].Value, " ")
+	index := slices.Index(rows[0].columns, column)
+	for _, r := range rows {
+		row := strings.Split(r.value, " ")
 		if row[index] == value {
-			return rows[i], nil
+			return r, nil
 		}
 	}
 	return Row{}, &NotFoundError{itemName: value}
@@ -239,30 +241,24 @@ func (r Rows) OrderByAscend(column string) (Rows, error) {
 func (r Rows) OrderByDescend(column string) (Rows, error) {
 	return orderBy(r, column, false)
 }
+func (r Row) String() string {
+	return r.value
+}
 func orderBy(r Rows, column string, ascend bool) ([]Row, error) {
-	newSlice := make([]Row, len(r)-1)
-	for i := 1; i < len(r); i++ {
-		newSlice[i-1] = r[i]
+	newSlice := make([]Row, len(r))
+	for i, row := range r {
+		newSlice[i] = row
 	}
-	sRow := strings.Split(r[0].Value, " ")
+	columns := r[0].columns
+	columnIndex := slices.Index(columns, column)
 
-	var columnIndex int
-	err := &NotFoundError{itemName: "Column"}
-	for i := 1; i < len(sRow); i = i + 2 {
-		if sRow[i] == column {
-			columnIndex = i
-			err = nil
-			break
-		}
-	}
-
-	if err != nil {
-		return nil, err
+	if columnIndex == -1 {
+		return nil, &NotFoundError{itemName: "Column"}
 	}
 
 	sort.Slice(newSlice, func(i, j int) bool {
-		s := strings.Split(newSlice[i].Value, " ")
-		s2 := strings.Split(newSlice[j].Value, " ")
+		s := strings.Split(newSlice[i].value, " ")
+		s2 := strings.Split(newSlice[j].value, " ")
 		if ascend {
 			return s[columnIndex] > s2[columnIndex]
 		} else {
@@ -270,7 +266,6 @@ func orderBy(r Rows, column string, ascend bool) ([]Row, error) {
 			return s[columnIndex] < s2[columnIndex]
 		}
 	})
-	newSlice = append(Rows{r[0]}, newSlice...)
 	return newSlice, nil
 }
 func deleteColumnData(table string, columnIndex int) string {
@@ -354,7 +349,7 @@ func valuesBuilder(table string, values []Row, idGenerate bool) string {
 		if n > count {
 			break
 		}
-		co[n] = strings.ReplaceAll(r.Value, " ", "U+0020")
+		co[n] = strings.ReplaceAll(r.value, " ", "U+0020")
 		n = n + 2
 
 	}
@@ -364,7 +359,7 @@ func valuesBuilder(table string, values []Row, idGenerate bool) string {
 func addValues(table table, values []string, idGenerate bool) table {
 	rows := make([]Row, len(values))
 	for i, v := range values {
-		rows[i] = Row{Value: v}
+		rows[i] = Row{value: v}
 	}
 	s := valuesBuilder(table.rawTable, rows, idGenerate)
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)

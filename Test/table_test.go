@@ -13,35 +13,35 @@ import (
 func (s *tableSuite) TestGetRowById() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	row, _ := tb.GetRowById("2")
-	row.Value = strings.TrimSpace(row.Value)
-	if row.Value != "|1| 2 |2| juan |3| 54" {
+	result := strings.TrimSpace(row.String())
+	if result != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", row))
 	}
 }
 func (s *tableSuite) TestGetRows() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	count := len(tb.GetRows())
-	if count != 3 {
-		s.Fail("Expected 2 Rows", fmt.Sprintf("Recibe: %d", count))
+	if count != 4 {
+		s.Fail("Expected 4 Rows", fmt.Sprintf("Recibe: %d", count))
 	}
 }
 func (s *tableSuite) TestAddValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.AddValue("name", "Jose")
+	tb, _ = tb.AddValue("name", "test")
 	rows := tb.GetRows()
-	id := getId(rows[3].Value)
-	if rows[3].Value != fmt.Sprintf("|1| %s |2| Jose |3| null ", id) {
-		s.Fail(fmt.Sprintf("Expected |1| %s |2| Jose |3| null", id), fmt.Sprintf("Recibe: %s", rows[2]))
+	id, index := getIdAndIndex(rows)
+	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| null ", id) {
+		s.Fail(fmt.Sprintf("Expected |1| %s |2| test |3| null", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 
 }
 func (s *tableSuite) TestAddValues() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb = tb.AddValues("Jose", "20")
+	tb = tb.AddValues("test", "20")
 	rows := tb.GetRows()
-	id := getId(rows[3].Value)
-	if rows[3].Value != fmt.Sprintf("|1| %s |2| Jose |3| 20 ", id) {
-		s.Fail(fmt.Sprintf("Expected |1| %s |2| Jose |3| 20", id), fmt.Sprintf("Recibe: %s", rows[2]))
+	id, index := getIdAndIndex(rows)
+	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| 20 ", id) {
+		s.Fail(fmt.Sprintf("Expected |1| %s |2| test |3| 20", id), fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
 func (s *tableSuite) TestUpdateTableName() {
@@ -63,7 +63,7 @@ func (s *tableSuite) TestUpdateValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb, _ = tb.UpdateValue("age", "2", "30")
 	rows := tb.GetRows()
-	if rows[2].Value != "|1| 2 |2| juan |3| 30 " {
+	if rows[1].String() != "|1| 2 |2| juan |3| 30 " {
 		s.Fail("Expected |1| 2 |2| juan |3| 30", fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
@@ -71,7 +71,11 @@ func (s *tableSuite) TestDeleteRow() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	tb, _ = tb.DeleteRow("1")
 	rows := tb.GetRows()
-	if rows[1].Value != "|1| 2 |2| juan |3| 54" || len(rows) != 2 {
+	if len(rows) != 3 {
+		s.Fail("Expected len of 3", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
+
+	if rows[0].String() != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 1 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
@@ -143,7 +147,7 @@ func (s *tableSuite) TestOrderByAscend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow, _ := rows.OrderByAscend("age")
-	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
+	if newRow[1].String() != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
@@ -151,7 +155,7 @@ func (s *tableSuite) TestOrderByDescend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow, _ := rows.OrderByDescend("age")
-	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
+	if newRow[0].String() != "|1| 1 |2| pedro |3| 32" {
 		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
@@ -159,7 +163,7 @@ func (s *tableSuite) TestOrderByAscend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow, _ := rows.OrderByAscend("name")
-	if newRow[1].Value != "|1| 1 |2| pedro |3| 32" {
+	if newRow[0].String() != "|1| 1 |2| pedro |3| 32" {
 		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
@@ -167,7 +171,7 @@ func (s *tableSuite) TestOrderByDescend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	newRow, _ := rows.OrderByDescend("name")
-	if newRow[1].Value != "|1| 2 |2| juan |3| 54" {
+	if newRow[1].String() != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
 	}
 }
@@ -183,7 +187,7 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 func (s *tableSuite) TestSearch() {
 	tb, _ := s.db.GetTableByName("Users")
 	result, _ := tb.SearchOne("age", "54")
-	if result.Value != "|1| 2 |2| juan |3| 54" {
+	if result.String() != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", result))
 	}
 }

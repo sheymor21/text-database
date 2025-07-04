@@ -43,7 +43,7 @@ func (s *databaseWithStaticDataSuite) TestStaticData() {
 		s.ErrFail(err)
 	}
 	rows := tb.GetRows()
-	if rows[1].Value != "|1| 1 |2| carlos |3| 32 " && rows[2].Value != "|1| 2 |2| jose |3| 23 " {
+	if rows[0].String() != "|1| 1 |2| carlos |3| 32 " && rows[1].String() != "|1| 2 |2| jose |3| 23 " {
 		s.Fail("Expected |1| 1 |2| carlos |3| 32 and |1| 2 |2| jose |3| 23", fmt.Sprintf("Recibe: %s", rows))
 	}
 }
