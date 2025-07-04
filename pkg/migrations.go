@@ -113,7 +113,7 @@ func GenerateMigration() {
 
 func migrationTableBuilder(c DbConfig) string {
 	var builder strings.Builder
-	tables := getTables()
+	tables := getTables(false)
 
 	for _, t := range tables {
 		tableName := strings.ReplaceAll(t.name, "-", "")

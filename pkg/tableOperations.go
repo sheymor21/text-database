@@ -46,7 +46,7 @@ type table struct {
 }
 
 func (table table) AddValue(column string, value string) (Table, error) {
-	tables := getTables()
+	tables := getTables(false)
 	s, err := valueBuilder(table, column, value)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (table table) UpdateTableName(newName string) Table {
 	table.name = rawNewName
 	table.rawTable = strings.Replace(table.rawTable, table.name, rawNewName, 1)
 	table.rawTable = strings.Replace(table.rawTable, formatName, rawNewNameEnd, 1)
-	tables := getTables()
+	tables := getTables(false)
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i].name = table.name
@@ -102,7 +102,7 @@ func (table table) UpdateColumnName(oldColumnName string, newColumnName string) 
 	if !slices.Contains(table.columns, oldColumnName) {
 		return nil, &NotFoundError{itemName: "Column"}
 	}
-	tables := getTables()
+	tables := getTables(false)
 	for i, c := range table.columns {
 		if c == oldColumnName {
 			table.columns[i] = newColumnName
@@ -145,7 +145,7 @@ func (table table) UpdateValue(columnName string, id string, newValue string) (T
 		}
 	}
 
-	tables := getTables()
+	tables := getTables(false)
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i].rawTable = table.rawTable
@@ -181,7 +181,7 @@ func (table table) DeleteRow(id string) (Table, error) {
 	rowString := strings.Join(newRow, "\n")
 	table.rawTable = "\n" + rowString + "\n"
 
-	tables := getTables()
+	tables := getTables(false)
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i] = table
@@ -214,7 +214,7 @@ func (table table) DeleteColumn(columnName string) (Table, error) {
 			break
 		}
 	}
-	tables := getTables()
+	tables := getTables(false)
 	for i, t := range tables {
 		if t.name == table.name {
 			tables[i] = table
@@ -393,7 +393,7 @@ func addValues(table table, values []string, idGenerate bool) table {
 	}
 	s := valuesBuilder(table.rawTable, rows, idGenerate)
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
-	tables := getTables()
+	tables := getTables(false)
 	for i, t := range tables {
 		if strings.Contains(t.name, table.name) {
 			tables[i] = table

@@ -78,7 +78,7 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 		return newDb, nil
 	}
 
-	return db{name: c.DatabaseName, tables: getTables()}, nil
+	return db{name: c.DatabaseName, tables: getTables(true)}, nil
 }
 func (c DbConfig) RemoveEncryption() error {
 	if dbName == "" {
@@ -97,7 +97,7 @@ func (d db) GetName() string {
 	return dbName
 }
 func (d db) GetTables() []Table {
-	tables := getTables()
+	tables := getTables(true)
 	iTables := make([]Table, len(tables))
 	for i, t := range tables {
 		iTables[i] = &t
@@ -105,7 +105,7 @@ func (d db) GetTables() []Table {
 	return iTables
 }
 func (d db) PrintTables() {
-	tables := getTables()
+	tables := getTables(true)
 	for _, t := range tables {
 		fmt.Println(t.rawTable)
 	}
@@ -116,14 +116,14 @@ func (d db) NewTable(name string, columns []string) Table {
 	return tb
 }
 func (d db) GetTableByName(name string) (Table, error) {
-	return getTableByName(name)
+	return getTableByName(name, true)
 }
 func (d db) AddForeignKey(key ForeignKey) error {
-	tb, errTb := getTableByName(key.TableName)
+	tb, errTb := getTableByName(key.TableName, false)
 	if errTb != nil {
 		return &NotFoundError{itemName: "Table: " + key.TableName}
 	}
-	tbf, errTbf := getTableByName(key.ForeignTableName)
+	tbf, errTbf := getTableByName(key.ForeignTableName, false)
 	if errTbf != nil {
 		return &NotFoundError{itemName: "Table: " + key.ForeignTableName}
 	}
@@ -148,7 +148,7 @@ func (d db) AddForeignKey(key ForeignKey) error {
 		utilities.ErrorHandler(os.WriteFile(dbName, []byte(linkAdded), 0666))
 	}
 
-	linkTb, _ := getTableByName("Links")
+	linkTb, _ := getTableByName("Links", false)
 	err := validateForeignKey(linkTb, key)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (d db) addTable(table table) Table {
 
 }
 func (d db) DeleteTable(tableName string) {
-	tables := getTables()
+	tables := getTables(true)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 	for i, t := range tables {
 		if t.name == tableNameRaw {
@@ -190,8 +190,8 @@ func (d db) DeleteTable(tableName string) {
 
 	saveTables(tables)
 }
-func getTableByName(tableName string) (table, error) {
-	tables := getTables()
+func getTableByName(tableName string, strConv bool) (table, error) {
+	tables := getTables(strConv)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 
 	for _, t := range tables {
@@ -202,10 +202,12 @@ func getTableByName(tableName string) (table, error) {
 	}
 	return table{}, &NotFoundError{itemName: "Table"}
 }
-func getTables() []table {
+func getTables(strConv bool) []table {
 	data := globalEncoderKey.ReadAndDecode(dbName)
 	data = strings.ReplaceAll(data, "\r", "")
-	data = strings.ReplaceAll(data, "U+0020", " ")
+	if strConv {
+		data = strings.ReplaceAll(data, "U+0020", " ")
+	}
 	s := strings.Split(data, "////")
 	sif := utilities.RemoveEmptyIndex(s)
 	tables := make([]table, len(sif))
@@ -342,7 +344,7 @@ func setDefaultData(c DbConfig) {
 	}
 }
 func isTableInDatabase(tableName string) bool {
-	_, err := getTableByName(tableName)
+	_, err := getTableByName(tableName, false)
 	if err != nil {
 		return false
 	}
@@ -350,7 +352,7 @@ func isTableInDatabase(tableName string) bool {
 }
 func areValuesInDatabase(tableName string, value string) bool {
 
-	tb, err := getTableByName(tableName)
+	tb, err := getTableByName(tableName, false)
 	if err != nil {
 		return false
 	}
@@ -361,7 +363,7 @@ func areValuesInDatabase(tableName string, value string) bool {
 	return true
 }
 func setDatabaseData(c DbConfig) db {
-	newDb := db{name: c.DatabaseName, tables: getTables()}
+	newDb := db{name: c.DatabaseName, tables: getTables(true)}
 	addData(newDb, c.DataConfig)
 	return newDb
 }
