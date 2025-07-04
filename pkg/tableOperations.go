@@ -26,6 +26,8 @@ type Table interface {
 	GetName() string
 	SearchOne(column string, value string) (Row, error)
 	SearchAll(column string, value string) Rows
+	SearchByForeignKey(id string) ([]ComplexRow, error)
+	getSimpleName() string
 }
 
 type Rows []Row
@@ -44,7 +46,16 @@ type table struct {
 	values   []Row
 	rawTable string
 }
+type foreignKey struct {
+	table  string
+	column string
+}
 
+func (table table) getSimpleName() string {
+	name := strings.Trim(table.nameRaw, "-----")
+	table.GetName()
+	return name
+}
 func (table table) AddValue(column string, value string) (Table, error) {
 	tables := getTables(false)
 	s, err := valueBuilder(table, column, value)
@@ -235,8 +246,28 @@ func (table table) SearchOne(column string, value string) (Row, error) {
 	}
 	return Row{}, &NotFoundError{itemName: value}
 }
+
 func (table table) SearchAll(column string, value string) Rows {
 	return searchAll(table, column, value)
+}
+func (table table) SearchByForeignKey(id string) ([]ComplexRow, error) {
+	keys, err := getTableForeignKey(table)
+	if err != nil {
+		return nil, err
+	}
+	complexRows := &[]ComplexRow{}
+	for _, key := range keys {
+		tb, _ := getTableByName(key.table, false)
+		result := searchAll(tb, key.column, id)
+		removeStrConv(result)
+		complexRow := &ComplexRow{
+			Table: tb,
+			Rows:  result,
+		}
+		*complexRows = append(*complexRows, *complexRow)
+	}
+
+	return *complexRows, nil
 }
 func (r Rows) String() string {
 	s := make([]string, len(r))
@@ -259,6 +290,14 @@ func (r Row) SearchValue(column string) string {
 func (r Row) String() string {
 	return r.value
 }
+
+func removeStrConv(r Rows) Rows {
+	for i := 0; i < len(r); i++ {
+		value := strings.ReplaceAll(r[i].value, "U+0020", " ")
+		r[i].value = value
+	}
+	return r
+}
 func searchAll(tb table, column string, value string) Rows {
 	var rowsResult Rows
 	for _, row := range tb.values {
@@ -268,6 +307,39 @@ func searchAll(tb table, column string, value string) Rows {
 		}
 	}
 	return rowsResult
+}
+func getTableForeignKey(tb table) ([]foreignKey, error) {
+	if !isForeignKeyAvailable(tb.getSimpleName()) {
+		return nil, &NotFoundError{itemName: "ForeignKey"}
+	}
+	var foreignKeys []foreignKey
+
+	link, _ := getTableByName("Links", false)
+	tb1 := searchAll(link, "table1", tb.getSimpleName())
+	for _, row := range tb1 {
+		tbName := row.SearchValue("table2")
+		columnLink := row.SearchValue("columnLink2")
+		foreignKeys = append(foreignKeys, foreignKey{table: tbName, column: columnLink})
+	}
+	return foreignKeys, nil
+}
+func isForeignKeyAvailable(tableName string) bool {
+	tb, err := getTableByName("Links", false)
+	if err != nil {
+		return false
+	}
+	rows := tb.GetRows()
+	for _, row := range rows {
+		v := row.SearchValue("table1")
+		if v == tableName {
+			return true
+		}
+		v = row.SearchValue("table2")
+		if v == tableName {
+			return true
+		}
+	}
+	return false
 }
 func orderBy(r Rows, column string, ascend bool) ([]Row, error) {
 	newSlice := make([]Row, len(r))

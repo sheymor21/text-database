@@ -206,6 +206,62 @@ func (s *tableSuite) TestSearchAll() {
 	}
 }
 
+func (s *tableSuiteWithStaticData) TestAddForeignKeys() {
+	fk := &pkg.ForeignKey{
+		TableName:         "Users",
+		ColumnName:        "id",
+		ForeignTableName:  "Houses",
+		ForeignColumnName: "id_owner",
+	}
+	err := s.db.AddForeignKey(*fk)
+	if err != nil {
+		s.Fail("Expected nil", fmt.Sprintf("Recibe: %s", err))
+	}
+}
+
+func (s *tableSuiteWithStaticData) TestAddForeignKeys_ReturnTableNotFoundError() {
+	fk := &pkg.ForeignKey{
+		TableName:         "test",
+		ColumnName:        "id",
+		ForeignTableName:  "Houses",
+		ForeignColumnName: "id_owner",
+	}
+	err := s.db.AddForeignKey(*fk)
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+	}
+}
+
+func (s *tableSuiteWithStaticData) TestSearchByForeignKey() {
+
+	fk := &pkg.ForeignKey{
+		TableName:         "Users",
+		ColumnName:        "id",
+		ForeignTableName:  "Houses",
+		ForeignColumnName: "id_owner",
+	}
+	err := s.db.AddForeignKey(*fk)
+	if err != nil {
+		s.Fail("Expected nil", fmt.Sprintf("Recibe: %s", err))
+	}
+
+	tb, _ := s.db.GetTableByName("Users")
+	complexRow, err := tb.SearchByForeignKey("1")
+	if err != nil {
+		s.Fail("Expected nil", fmt.Sprintf("Recibe: %s", err))
+	}
+	if len(complexRow[0].Rows) < 2 {
+		s.Fail("Expected slice greater than 2", fmt.Sprintf("Recibe: %d", len(complexRow)))
+	}
+	if complexRow[0].Rows[0].String() != "|1| 1 |2| pedro avenue |3| 1" {
+		s.Fail("Expected |1| 1 |2| pedro avenue |3| 1", fmt.Sprintf("Recibe: %s", complexRow[0].Rows[0]))
+	}
+	if complexRow[0].Rows[1].String() != "|1| 2 |2| pedro avenue |3| 1" {
+		s.Fail("Expected |1| 2 |2| pedro avenue |3| 1", fmt.Sprintf("Recibe: %s", complexRow[0].Rows[1]))
+	}
+
+}
+
 func getIdAndIndex(r pkg.Rows) (string, int) {
 	var index int
 	var id string
