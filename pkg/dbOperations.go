@@ -131,14 +131,11 @@ func (d db) AddForeignKey(key ForeignKey) error {
 	tbRows := getRows(tb.rawTable)
 	tbfRows := getRows(tbf.rawTable)
 
-	tbS := strings.Split(tbRows[0].value, " ")
-	tbfS := strings.Split(tbfRows[0].value, " ")
-
-	if !slices.Contains(tbS, key.ColumnName) {
+	if !slices.Contains(tbRows[0].columns, key.ColumnName) {
 		msg := fmt.Sprintf("Column: %s does not exist in table: %s", key.ColumnName, key.TableName)
 		return &NotFoundError{itemName: msg}
 	}
-	if !slices.Contains(tbfS, key.ForeignColumnName) {
+	if !slices.Contains(tbfRows[0].columns, key.ForeignColumnName) {
 		msg := fmt.Sprintf("Column: %s does not exist in table: %s", key.ForeignColumnName, key.ForeignTableName)
 		return &NotFoundError{itemName: msg}
 	}
