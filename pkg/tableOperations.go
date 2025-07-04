@@ -261,10 +261,10 @@ func (r Row) String() string {
 }
 func searchAll(tb table, column string, value string) Rows {
 	var rowsResult Rows
-	for i := 1; i < len(tb.values); i++ {
-		v := tb.values[i].SearchValue(column)
+	for _, row := range tb.values {
+		v := row.SearchValue(column)
 		if v == value {
-			rowsResult = append(rowsResult, tb.values[i])
+			rowsResult = append(rowsResult, row)
 		}
 	}
 	return rowsResult
