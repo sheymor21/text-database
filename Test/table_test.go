@@ -184,12 +184,40 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 		s.ErrFail(err)
 	}
 }
-func (s *tableSuite) TestSearch() {
+func (s *tableSuite) TestSearchOne() {
 	tb, _ := s.db.GetTableByName("Users")
 	result, _ := tb.SearchOne("age", "54")
 	if result.String() != "|1| 2 |2| juan |3| 54" {
 		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", result))
 	}
+}
+func (s *tableSuite) TestSearchAll() {
+	tb, _ := s.db.GetTableByName("Users")
+	result := tb.SearchAll("age", "54")
+	if len(result) < 2 {
+
+		s.Fail("Expected slice len greater than 2", fmt.Sprintf("Recibe: %d", len(result)))
+	}
+	if result[0].String() != "|1| 2 |2| juan |3| 54" {
+		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", result))
+	}
+	if result[1].String() != "|1| 4 |2| manuel |3| 54" {
+		s.Fail("Expected |1| 4 |2| manuel |3| 54", fmt.Sprintf("Recibe: %s", result))
+	}
+}
+
+func getIdAndIndex(r pkg.Rows) (string, int) {
+	var index int
+	var id string
+	for i, row := range r {
+		value := row.SearchValue("name")
+		if value == "test" {
+			id = getId(row.String())
+			index = i
+			return id, index
+		}
+	}
+	return "", 0
 }
 
 func TestTable(t *testing.T) {

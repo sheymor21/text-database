@@ -24,15 +24,19 @@ type Table interface {
 	GetColumns() []string
 	PrintTable()
 	GetName() string
-	Search(column string, value string) (Row, error)
+	SearchOne(column string, value string) (Row, error)
+	SearchAll(column string, value string) Rows
 }
 
 type Rows []Row
 type Row struct {
-	Value string
 	columns []string
 	value   string
 }
+
+type ComplexRow struct {
+	Table table
+	Rows  Rows
 }
 type table struct {
 	name     string
@@ -231,6 +235,9 @@ func (table table) SearchOne(column string, value string) (Row, error) {
 	}
 	return Row{}, &NotFoundError{itemName: value}
 }
+func (table table) SearchAll(column string, value string) Rows {
+	return searchAll(table, column, value)
+}
 func (r Rows) String() string {
 	s := make([]string, len(r))
 	return strings.Join(s, "\n")
@@ -241,8 +248,26 @@ func (r Rows) OrderByAscend(column string) (Rows, error) {
 func (r Rows) OrderByDescend(column string) (Rows, error) {
 	return orderBy(r, column, false)
 }
+func (r Row) SearchValue(column string) string {
+	index := slices.Index(r.columns, column)
+	if index == -1 {
+		return ""
+	}
+	s := strings.Split(r.value, " ")
+	return s[index]
+}
 func (r Row) String() string {
 	return r.value
+}
+func searchAll(tb table, column string, value string) Rows {
+	var rowsResult Rows
+	for i := 1; i < len(tb.values); i++ {
+		v := tb.values[i].SearchValue(column)
+		if v == value {
+			rowsResult = append(rowsResult, tb.values[i])
+		}
+	}
+	return rowsResult
 }
 func orderBy(r Rows, column string, ascend bool) ([]Row, error) {
 	newSlice := make([]Row, len(r))
