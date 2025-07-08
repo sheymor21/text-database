@@ -47,8 +47,8 @@ type table struct {
 	rawTable string
 }
 type foreignKey struct {
-	table  string
-	column string
+	tableName string
+	column    string
 }
 
 func (table table) getSimpleName() string {
@@ -257,7 +257,7 @@ func (table table) SearchByForeignKey(id string) ([]ComplexRow, error) {
 	}
 	complexRows := &[]ComplexRow{}
 	for _, key := range keys {
-		tb, _ := getTableByName(key.table, false)
+		tb, _ := getTableByName(key.tableName, false)
 		result := searchAll(tb, key.column, id)
 		removeStrConv(result)
 		complexRow := &ComplexRow{
@@ -319,7 +319,7 @@ func getTableForeignKey(tb table) ([]foreignKey, error) {
 	for _, row := range tb1 {
 		tbName := row.SearchValue("table2")
 		columnLink := row.SearchValue("columnLink2")
-		foreignKeys = append(foreignKeys, foreignKey{table: tbName, column: columnLink})
+		foreignKeys = append(foreignKeys, foreignKey{tableName: tbName, column: columnLink})
 	}
 	return foreignKeys, nil
 }
