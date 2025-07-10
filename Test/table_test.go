@@ -27,7 +27,7 @@ func (s *tableSuite) TestGetRows() {
 }
 func (s *tableSuite) TestAddValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.AddValue("name", "test")
+	_ = tb.AddValue("name", "test")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
 	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| null", id) {
@@ -37,7 +37,7 @@ func (s *tableSuite) TestAddValue() {
 }
 func (s *tableSuite) TestAddValues() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb = tb.AddValues("test", "20")
+	tb.AddValues("test", "20")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
 	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| 20", id) {
@@ -46,14 +46,14 @@ func (s *tableSuite) TestAddValues() {
 }
 func (s *tableSuite) TestUpdateTableName() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb = tb.UpdateTableName("Test")
+	tb.UpdateTableName("Test")
 	if tb.GetName() != "-----Test-----" {
 		s.Fail("Expected Test Table", fmt.Sprintf("Recibe: %s", tb))
 	}
 }
 func (s *tableSuite) TestUpdateColumnName() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.UpdateColumnName("name", "username")
+	_ = tb.UpdateColumnName("name", "username")
 	columns := strings.TrimSpace(strings.Join(tb.GetColumns(), " "))
 	if columns != "[1] id [2] username [3] age" {
 		s.Fail("Expected [1] id [2] username |3| age ", fmt.Sprintf("Recibe: %s", columns))
@@ -61,7 +61,7 @@ func (s *tableSuite) TestUpdateColumnName() {
 }
 func (s *tableSuite) TestUpdateValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.UpdateValue("age", "2", "30")
+	_ = tb.UpdateValue("age", "2", "30")
 	rows := tb.GetRows()
 	if rows[1].String() != "|1| 2 |2| juan |3| 30 " {
 		s.Fail("Expected |1| 2 |2| juan |3| 30", fmt.Sprintf("Recibe: %s", rows[2]))
@@ -69,7 +69,7 @@ func (s *tableSuite) TestUpdateValue() {
 }
 func (s *tableSuite) TestDeleteRow() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.DeleteRow("1", false)
+	_ = tb.DeleteRow("1", false)
 	rows := tb.GetRows()
 	if len(rows) != 3 {
 		s.Fail("Expected len of 3", fmt.Sprintf("Recibe: %d", len(rows)))
@@ -81,7 +81,7 @@ func (s *tableSuite) TestDeleteRow() {
 }
 func (s *tableSuite) TestDeleteColumn() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.DeleteColumn("age")
+	_ = tb.DeleteColumn("age")
 	columns := strings.TrimSpace(strings.Join(tb.GetColumns(), " "))
 	if columns != "[1] id [2] name" {
 		s.Fail("Expected [1] id [2] name", fmt.Sprintf("Recibe: %s", columns))
@@ -89,7 +89,7 @@ func (s *tableSuite) TestDeleteColumn() {
 }
 func (s *tableSuite) TestAddValue_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.AddValue("test", "value")
+	err := tb.AddValue("test", "value")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -97,7 +97,7 @@ func (s *tableSuite) TestAddValue_ReturnColumnError() {
 }
 func (s *tableSuite) TestUpdateColumnName_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.UpdateColumnName("test", "value")
+	err := tb.UpdateColumnName("test", "value")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -105,7 +105,7 @@ func (s *tableSuite) TestUpdateColumnName_ReturnColumnError() {
 }
 func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.UpdateValue("test", "value", "value")
+	err := tb.UpdateValue("test", "value", "value")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -113,7 +113,7 @@ func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
 }
 func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.UpdateValue("name", "test", "value")
+	err := tb.UpdateValue("name", "test", "value")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -121,7 +121,7 @@ func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 }
 func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.DeleteRow("test", false)
+	err := tb.DeleteRow("test", false)
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -129,7 +129,7 @@ func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 }
 func (s *tableSuite) TestDeleteColumn_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.DeleteColumn("test")
+	err := tb.DeleteColumn("test")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -268,7 +268,7 @@ func (s *tableSuiteWithStaticData) TestDeleteByForeignKey() {
 	_ = s.db.AddForeignKey(*fk)
 
 	usersTb, _ := s.db.GetTableByName("Users")
-	_, err := usersTb.DeleteRow("1", true)
+	err := usersTb.DeleteRow("1", true)
 	if err != nil {
 		s.Fail(err.Error())
 	}

@@ -116,7 +116,8 @@ func (d db) NewTable(name string, columns []string) Table {
 	return tb
 }
 func (d db) GetTableByName(name string) (Table, error) {
-	return getTableByName(name, true)
+	tb, err := getTableByName(name, true)
+	return &tb, err
 }
 func (d db) AddForeignKey(key ForeignKey) error {
 	tb, errTb := getTableByName(key.TableName, false)
@@ -329,7 +330,7 @@ func generateStaticData(db db, v DataConfig) {
 	tb := db.NewTable(v.TableName, v.Columns)
 	if v.Values != nil || len(v.Values) != 0 {
 		for _, iv := range v.Values {
-			tb = tb.addValuesIdGenerationOff(iv)
+			tb.addValuesIdGenerationOff(iv)
 		}
 	}
 }
