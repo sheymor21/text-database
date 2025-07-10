@@ -146,39 +146,39 @@ func (s *tableSuite) TestGetRowById_ReturnIdError() {
 func (s *tableSuite) TestOrderByAscend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow, _ := rows.OrderByAscend("age")
-	if newRow[1].String() != "|1| 2 |2| juan |3| 54" {
-		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
+	_ = rows.OrderByAscend("age")
+	if rows[1].String() != "|1| 2 |2| juan |3| 54" {
+		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
 func (s *tableSuite) TestOrderByDescend_Numbers() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow, _ := rows.OrderByDescend("age")
-	if newRow[0].String() != "|1| 1 |2| pedro |3| 32" {
-		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
+	_ = rows.OrderByDescend("age")
+	if rows[0].String() != "|1| 1 |2| pedro |3| 32" {
+		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
 func (s *tableSuite) TestOrderByAscend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow, _ := rows.OrderByAscend("name")
-	if newRow[0].String() != "|1| 1 |2| pedro |3| 32" {
-		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", newRow[1]))
+	_ = rows.OrderByAscend("name")
+	if rows[0].String() != "|1| 1 |2| pedro |3| 32" {
+		s.Fail("Expected |1| 1 |2| pedro |3| 32", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
 func (s *tableSuite) TestOrderByDescend_Letters() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	newRow, _ := rows.OrderByDescend("name")
-	if newRow[1].String() != "|1| 2 |2| juan |3| 54" {
-		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", newRow[1]))
+	_ = rows.OrderByDescend("name")
+	if rows[1].String() != "|1| 2 |2| juan |3| 54" {
+		s.Fail("Expected |1| 2 |2| juan |3| 54", fmt.Sprintf("Recibe: %s", rows[1]))
 	}
 }
 func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
-	_, err := rows.OrderByAscend("Email")
+	err := rows.OrderByAscend("Email")
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)

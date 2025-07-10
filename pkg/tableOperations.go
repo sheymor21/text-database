@@ -285,17 +285,27 @@ func deleteByForeignKey(tb table, id string) error {
 	return nil
 }
 
-func (r Rows) String() string {
-	s := make([]string, len(r))
+func (r *Rows) String() string {
+	s := make([]string, len(*r))
 	return strings.Join(s, "\n")
 }
-func (r Rows) OrderByAscend(column string) (Rows, error) {
-	return orderBy(r, column, true)
+func (r *Rows) OrderByAscend(column string) error {
+	order, err := orderBy(*r, column, true)
+	if err != nil {
+		return err
+	}
+	*r = order
+	return err
 }
-func (r Rows) OrderByDescend(column string) (Rows, error) {
-	return orderBy(r, column, false)
+func (r *Rows) OrderByDescend(column string) error {
+	order, err := orderBy(*r, column, false)
+	if err != nil {
+		return err
+	}
+	*r = order
+	return nil
 }
-func (r Row) SearchValue(column string) string {
+func (r *Row) SearchValue(column string) string {
 	index := slices.Index(r.columns, column)
 	if index == -1 {
 		return ""
@@ -303,7 +313,7 @@ func (r Row) SearchValue(column string) string {
 	s := strings.Split(r.value, " ")
 	return s[index]
 }
-func (r Row) String() string {
+func (r *Row) String() string {
 	return r.value
 }
 
