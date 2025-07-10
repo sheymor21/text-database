@@ -75,10 +75,10 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 
 	if c.DataConfig != nil {
 		newDb := setDatabaseData(c)
-		return newDb, nil
+		return &newDb, nil
 	}
 
-	return db{name: c.DatabaseName, tables: getTables(true)}, nil
+	return &db{name: c.DatabaseName, tables: getTables(true)}, nil
 }
 func (c DbConfig) RemoveEncryption() error {
 	if dbName == "" {
@@ -93,10 +93,10 @@ func (c DbConfig) RemoveEncryption() error {
 	}
 	return &NotFoundError{itemName: "EncryptionKey"}
 }
-func (d db) GetName() string {
+func (d *db) GetName() string {
 	return dbName
 }
-func (d db) GetTables() []Table {
+func (d *db) GetTables() []Table {
 	tables := getTables(true)
 	iTables := make([]Table, len(tables))
 	for i, t := range tables {
@@ -104,22 +104,22 @@ func (d db) GetTables() []Table {
 	}
 	return iTables
 }
-func (d db) PrintTables() {
+func (d *db) PrintTables() {
 	tables := getTables(true)
 	for _, t := range tables {
 		fmt.Println(t.rawTable)
 	}
 }
-func (d db) NewTable(name string, columns []string) Table {
+func (d *db) NewTable(name string, columns []string) Table {
 	t := &table{name, columns, nil, ""}
 	tb := d.addTable(*t)
 	return tb
 }
-func (d db) GetTableByName(name string) (Table, error) {
+func (d *db) GetTableByName(name string) (Table, error) {
 	tb, err := getTableByName(name, true)
 	return &tb, err
 }
-func (d db) AddForeignKey(key ForeignKey) error {
+func (d *db) AddForeignKey(key ForeignKey) error {
 	tb, errTb := getTableByName(key.TableName, false)
 	if errTb != nil {
 		return &NotFoundError{itemName: "Table: " + key.TableName}
@@ -154,7 +154,7 @@ func (d db) AddForeignKey(key ForeignKey) error {
 	linkTb.AddValues(key.TableName, key.ColumnName, key.ForeignTableName, key.ForeignColumnName)
 	return nil
 }
-func (d db) AddForeignKeys(keys []ForeignKey) error {
+func (d *db) AddForeignKeys(keys []ForeignKey) error {
 	for _, key := range keys {
 		err := d.AddForeignKey(key)
 		if err != nil {
@@ -163,7 +163,7 @@ func (d db) AddForeignKeys(keys []ForeignKey) error {
 	}
 	return nil
 }
-func (d db) addTable(table table) Table {
+func (d *db) addTable(table table) Table {
 	data := globalEncoderKey.ReadAndDecode(dbName)
 	dataByte := []byte(data)
 	raw := tableBuilder(table)
@@ -176,7 +176,7 @@ func (d db) addTable(table table) Table {
 	return utilities.Must(d.GetTableByName(table.nameRaw))
 
 }
-func (d db) DeleteTable(tableName string) {
+func (d *db) DeleteTable(tableName string) {
 	tables := getTables(true)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 	for i, t := range tables {
