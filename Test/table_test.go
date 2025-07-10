@@ -69,7 +69,7 @@ func (s *tableSuite) TestUpdateValue() {
 }
 func (s *tableSuite) TestDeleteRow() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
-	tb, _ = tb.DeleteRow("1")
+	tb, _ = tb.DeleteRow("1", false)
 	rows := tb.GetRows()
 	if len(rows) != 3 {
 		s.Fail("Expected len of 3", fmt.Sprintf("Recibe: %d", len(rows)))
@@ -121,7 +121,7 @@ func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 }
 func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
-	_, err := tb.DeleteRow("test")
+	_, err := tb.DeleteRow("test", false)
 	var example *pkg.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
@@ -205,7 +205,6 @@ func (s *tableSuite) TestSearchAll() {
 		s.Fail("Expected |1| 4 |2| manuel |3| 54", fmt.Sprintf("Recibe: %s", result))
 	}
 }
-
 func (s *tableSuiteWithStaticData) TestAddForeignKeys() {
 	fk := &pkg.ForeignKey{
 		TableName:         "Users",
@@ -218,7 +217,6 @@ func (s *tableSuiteWithStaticData) TestAddForeignKeys() {
 		s.Fail("Expected nil", fmt.Sprintf("Recibe: %s", err))
 	}
 }
-
 func (s *tableSuiteWithStaticData) TestAddForeignKeys_ReturnTableNotFoundError() {
 	fk := &pkg.ForeignKey{
 		TableName:         "test",
@@ -231,7 +229,6 @@ func (s *tableSuiteWithStaticData) TestAddForeignKeys_ReturnTableNotFoundError()
 	if !errors.As(err, &example) {
 	}
 }
-
 func (s *tableSuiteWithStaticData) TestSearchByForeignKey() {
 
 	fk := &pkg.ForeignKey{
@@ -260,6 +257,33 @@ func (s *tableSuiteWithStaticData) TestSearchByForeignKey() {
 		s.Fail("Expected |1| 2 |2| pedro avenue |3| 1", fmt.Sprintf("Recibe: %s", complexRow[0].Rows[1]))
 	}
 
+}
+func (s *tableSuiteWithStaticData) TestDeleteByForeignKey() {
+	fk := &pkg.ForeignKey{
+		TableName:         "Users",
+		ColumnName:        "id",
+		ForeignTableName:  "Houses",
+		ForeignColumnName: "id_owner",
+	}
+	_ = s.db.AddForeignKey(*fk)
+
+	usersTb, _ := s.db.GetTableByName("Users")
+	_, err := usersTb.DeleteRow("1", true)
+	if err != nil {
+		s.Fail(err.Error())
+	}
+	housesTb, _ := s.db.GetTableByName("Houses")
+	rows := housesTb.GetRows()
+	if len(rows) != 2 {
+		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
+	if rows[0].String() != "|1| 3 |2| juan avenue |3| 2" {
+
+		s.Fail("Expected |1| 3 |2| juan avenue |3| 2", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
+	if rows[1].String() != "|1| 4 |2| carlos avenue |3| 3" {
+		s.Fail("Expected |1| 4 |2| carlos avenue |3| 3", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
 }
 
 func getIdAndIndex(r pkg.Rows) (string, int) {
