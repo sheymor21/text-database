@@ -124,9 +124,9 @@ func (t *table) UpdateColumnName(oldColumnName string, newColumnName string) err
 	}
 
 	t.rawTable = strings.Replace(t.rawTable, oldColumnName, newColumnName, 1)
-	for i, t := range tables {
-		if t.nameRaw == t.nameRaw {
-			tables[i] = t
+	for i, tb := range tables {
+		if tb.nameRaw == tb.nameRaw {
+			tables[i] = tb
 			break
 		}
 	}
@@ -159,9 +159,9 @@ func (t *table) UpdateValue(columnName string, id string, newValue string) error
 	}
 
 	tables := getTables(false)
-	for i, t := range tables {
-		if t.nameRaw == t.nameRaw {
-			tables[i].rawTable = t.rawTable
+	for i, tb := range tables {
+		if tb.nameRaw == tb.nameRaw {
+			tables[i].rawTable = tb.rawTable
 			break
 		}
 	}
@@ -219,9 +219,9 @@ func (t *table) DeleteColumn(columnName string) error {
 		}
 	}
 	tables := getTables(false)
-	for i, t := range tables {
-		if t.nameRaw == t.nameRaw {
-			tables[i] = t
+	for i, tb := range tables {
+		if tb.nameRaw == tb.nameRaw {
+			tables[i] = tb
 			break
 		}
 	}
