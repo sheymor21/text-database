@@ -217,10 +217,15 @@ func getTables(strConv bool) []table {
 	return tables
 }
 func tableBuilder(table table) string {
+	if table.columns[0] != "id" {
+		slices.Reverse(table.columns)
+		table.columns = append(table.columns, "id")
+		slices.Reverse(table.columns)
+	}
 	columnsRaw := columnsBuilder(table.columns)
 	var builder strings.Builder
 	name := fmt.Sprintf("\n-----%s-----\n", table.nameRaw)
-	column := fmt.Sprintf("[1] id %s", columnsRaw)
+	column := fmt.Sprintf(columnsRaw)
 	end := fmt.Sprintf("\n!*!\n-----%s_End-----\n////", table.nameRaw)
 	builder.WriteString(name)
 	builder.WriteString(column)
@@ -239,11 +244,11 @@ func columnsBuilder(columns []string) string {
 	}
 
 	var stringBuilder strings.Builder
-	count := len(columns)
-	count = count + 2
-	for i := 2; i < count; i++ {
-		stringBuilder.WriteString(fmt.Sprintf("[%d] %s ", i, columns[i-2]))
+
+	for i := 0; i < len(columns); i++ {
+		stringBuilder.WriteString(fmt.Sprintf("[%d] %s ", i+1, columns[i]))
 	}
+
 	return strings.TrimSpace(stringBuilder.String())
 }
 func addTableFrontiers(tables []table) string {
