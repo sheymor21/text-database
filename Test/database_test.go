@@ -36,7 +36,6 @@ func (s *databaseSuite) TestDeleteTable() {
 		}
 	}
 }
-
 func (s *databaseWithStaticDataSuite) TestStaticData() {
 	tb, err := s.db.GetTableByName("DataTest")
 	if err != nil {
@@ -47,7 +46,6 @@ func (s *databaseWithStaticDataSuite) TestStaticData() {
 		s.Fail("Expected |1| 1 |2| carlos |3| 32 and |1| 2 |2| jose |3| 23", fmt.Sprintf("Recibe: %s", rows))
 	}
 }
-
 func (s *databaseSuite) TestGetTableByName() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	if tb.GetName() != "-----Users-----" {
@@ -63,6 +61,22 @@ func (s *databaseSuite) TestGetTableByName_ReturnNameError() {
 	}
 }
 
+func (s *databaseSuite) TestFromSql_Select_All() {
+	tb := utilities.Must(s.db.GetTableByName("Users"))
+	data, _ := s.db.FromSql("SELECT * FROM Users")
+	count := len(tb.GetRows())
+	if len(data) != count {
+		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data)))
+	}
+}
+func (s *databaseSuite) TestFromSql_Select() {
+	tb := utilities.Must(s.db.GetTableByName("Users"))
+	data, _ := s.db.FromSql("SELECT name , age FROM Users")
+	count := len(tb.GetRows())
+	if len(data) != count {
+		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data)))
+	}
+}
 func TestDatabase(t *testing.T) {
 	t.Run("TestSet: Database", func(t *testing.T) {
 		suite.Run(t, &databaseSuite{})

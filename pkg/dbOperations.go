@@ -18,6 +18,7 @@ type Db interface {
 	DeleteTable(tableName string)
 	AddForeignKey(key ForeignKey) error
 	AddForeignKeys(keys []ForeignKey) error
+	FromSql(sql string) ([]string, error)
 }
 type db struct {
 	name   string
@@ -187,6 +188,90 @@ func (d *db) DeleteTable(tableName string) {
 	}
 
 	saveTables(tables)
+}
+func (d *db) FromSql(sql string) ([]string, error) {
+	return validateSql(sql)
+}
+func validateSql(sql string) ([]string, error) {
+	sql = strings.ReplaceAll(sql, ",", " ")
+	sqlS := strings.Split(sql, " ")
+	sqlS = utilities.RemoveEmptyIndex(sqlS)
+	switch strings.ToUpper(sqlS[0]) {
+	case "SELECT":
+		result := sqlSelect(sqlS)
+		return result, nil
+	case "CREATE":
+		break
+	case "UPDATE":
+		break
+	case "DELETE":
+		break
+	default:
+	}
+	return nil, nil
+}
+
+func sqlSelect(sqlS []string) []string {
+	index := slices.Index(sqlS, "FROM")
+	tableName := sqlS[index+1]
+	tb, _ := getTableByName(tableName, true)
+	rows := tb.GetRows()
+	columns := getSqlColumns(tb, sqlS)
+
+	var result []string
+	for i := 0; i < len(rows); i++ {
+		for _, v := range columns {
+			value := rows[i].SearchValue(v)
+			result = append(result, value)
+		}
+	}
+	finalResult := valuesBuilderSql(columns, result)
+	return finalResult
+}
+func getSqlColumns(tb table, sqlS []string) []string {
+	fromIndex := slices.Index(sqlS, "FROM")
+
+	var columns []string
+	if sqlS[1] != "*" {
+		for i := 1; i < fromIndex; i++ {
+			columns = append(columns, sqlS[i])
+		}
+	} else {
+		tbColumns := tb.GetColumns()
+		for i := 1; i < len(tbColumns); i += 2 {
+			value := tbColumns[i]
+			columns = append(columns, value)
+		}
+	}
+	return columns
+}
+func valuesBuilderSql(sqlColumns []string, sqlValues []string) []string {
+	columns := columnsBuilder(sqlColumns)
+	columnsS := strings.Split(columns, " ")
+	formattedColumns := utilities.RemoveEmptyIndex(columnsS)
+	count := len(columnsS)
+	for i := 0; i < count; i += 2 {
+		formattedColumns[i] = strings.ReplaceAll(formattedColumns[i], "[", "|")
+		formattedColumns[i] = strings.ReplaceAll(formattedColumns[i], "]", "|")
+	}
+	n := 0
+	var result []string
+	count = len(sqlColumns)
+	for i := 0; i < len(sqlValues); i++ {
+		if count == n {
+			n = 0
+		}
+		index := slices.Index(columnsS, sqlColumns[n])
+		formattedColumns[index] = sqlValues[i]
+		formattedResult := strings.Join(formattedColumns, " ")
+		formattedResult = strings.Trim(formattedResult, " ")
+		n++
+		if count == n {
+			result = append(result, formattedResult)
+		}
+	}
+	return result
+
 }
 func getTableByName(tableName string, strConv bool) (table, error) {
 	tables := getTables(strConv)
