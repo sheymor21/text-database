@@ -18,7 +18,7 @@ type Db interface {
 	DeleteTable(tableName string)
 	AddForeignKey(key ForeignKey) error
 	AddForeignKeys(keys []ForeignKey) error
-	FromSql(sql string) ([]string, error)
+	FromSql(sql string) (Rows, error)
 }
 type db struct {
 	name   string
@@ -189,10 +189,10 @@ func (d *db) DeleteTable(tableName string) {
 
 	saveTables(tables)
 }
-func (d *db) FromSql(sql string) ([]string, error) {
+func (d *db) FromSql(sql string) (Rows, error) {
 	return validateSql(sql)
 }
-func validateSql(sql string) ([]string, error) {
+func validateSql(sql string) (Rows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
 	sqlS := strings.Split(sql, " ")
 	sqlS = utilities.RemoveEmptyIndex(sqlS)
@@ -211,7 +211,7 @@ func validateSql(sql string) ([]string, error) {
 	return nil, nil
 }
 
-func sqlSelect(sqlS []string) []string {
+func sqlSelect(sqlS []string) Rows {
 	index := slices.Index(sqlS, "FROM")
 	tableName := sqlS[index+1]
 	tb, _ := getTableByName(tableName, true)
@@ -245,7 +245,7 @@ func getSqlColumns(tb table, sqlS []string) []string {
 	}
 	return columns
 }
-func valuesBuilderSql(sqlColumns []string, sqlValues []string) []string {
+func valuesBuilderSql(sqlColumns []string, sqlValues []string) Rows {
 	columns := columnsBuilder(sqlColumns)
 	columnsS := strings.Split(columns, " ")
 	formattedColumns := utilities.RemoveEmptyIndex(columnsS)
@@ -255,7 +255,7 @@ func valuesBuilderSql(sqlColumns []string, sqlValues []string) []string {
 		formattedColumns[i] = strings.ReplaceAll(formattedColumns[i], "]", "|")
 	}
 	n := 0
-	var result []string
+	var result Rows
 	count = len(sqlColumns)
 	for i := 0; i < len(sqlValues); i++ {
 		if count == n {
@@ -267,7 +267,11 @@ func valuesBuilderSql(sqlColumns []string, sqlValues []string) []string {
 		formattedResult = strings.Trim(formattedResult, " ")
 		n++
 		if count == n {
-			result = append(result, formattedResult)
+			row := &Row{
+				columns: columnsS,
+				value:   formattedResult,
+			}
+			result = append(result, *row)
 		}
 	}
 	return result
