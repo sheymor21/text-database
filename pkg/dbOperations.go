@@ -15,7 +15,7 @@ type Db interface {
 	GetTableByName(name string) (Table, error)
 	PrintTables()
 	NewTable(name string, columns []string) Table
-	DeleteTable(tableName string)
+	DeleteTable(tableName string) error
 	AddForeignKey(key ForeignKey) error
 	AddForeignKeys(keys []ForeignKey) error
 	FromSql(sql string) (SqlRows, error)
@@ -176,20 +176,25 @@ func (d *db) addTable(table table) Table {
 	return utilities.Must(d.GetTableByName(table.nameRaw))
 
 }
-func (d *db) DeleteTable(tableName string) {
+func (d *db) DeleteTable(tableName string) error {
 	tables := getTables(true)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
+	deleted := false
 	for i, t := range tables {
 		if t.nameRaw == tableNameRaw {
 			tables = slices.Delete(tables, i, i+1)
+			deleted = true
 			break
 		}
 	}
-
+	if !deleted {
+		return &NotFoundError{itemName: tableName}
+	}
 	saveTables(tables)
+	return nil
 }
 func (d *db) FromSql(sql string) (SqlRows, error) {
-	return validateSql(sql)
+	return validateSql(*d, sql)
 }
 func getTableByName(tableName string, strConv bool) (table, error) {
 	tables := getTables(strConv)

@@ -28,7 +28,10 @@ func (s *databaseSuite) TestNewTable() {
 }
 func (s *databaseSuite) TestDeleteTable() {
 	s.db.NewTable("Test", []string{"name", "age"})
-	s.db.DeleteTable("Test")
+	err := s.db.DeleteTable("Test")
+	if err != nil {
+		s.ErrFail(err)
+	}
 	tbs := s.db.GetTables()
 	for _, t := range tbs {
 		if t.GetName() == "-----Test-----" {
