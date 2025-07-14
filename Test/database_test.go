@@ -134,6 +134,18 @@ func (s *databaseSuite) TestFromSql_Insert() {
 		s.Fail("Expected len of 6", fmt.Sprintf("Recibe: %d", len(rows)))
 	}
 }
+func (s *databaseSuite) TestFromSql_Drop() {
+	_, err := s.db.FromSql("Drop Table Users")
+	if err != nil {
+		s.ErrFail(err)
+	}
+	_, err = s.db.GetTableByName("Users")
+
+	var example *pkg.NotFoundError
+	if !errors.As(err, &example) {
+		s.ErrFail(err)
+	}
+}
 func TestDatabase(t *testing.T) {
 	t.Run("TestSet: Database", func(t *testing.T) {
 		suite.Run(t, &databaseSuite{})

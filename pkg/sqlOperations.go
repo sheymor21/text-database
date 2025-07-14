@@ -13,7 +13,7 @@ type SqlRows struct {
 	Rows       Rows
 }
 
-func validateSql(sql string) (SqlRows, error) {
+func validateSql(d db, sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
 	sql = strings.ReplaceAll(sql, "(", " ")
 	sql = strings.ReplaceAll(sql, ")", " ")
@@ -35,9 +35,20 @@ func validateSql(sql string) (SqlRows, error) {
 			return SqlRows{}, errors.New("invalid sql")
 		}
 		return sqlInsert(sqlS)
+	case "DROP":
+		err := sqlDrop(d, sqlS)
+		return SqlRows{}, err
 	default:
 	}
 	return SqlRows{}, nil
+}
+func sqlDrop(d db, sqlS []string) error {
+	tableName := sqlS[2]
+	err := d.DeleteTable(tableName)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 func sqlSelect(sqlS []string) SqlRows {
 	index := slices.Index(sqlS, "FROM")
