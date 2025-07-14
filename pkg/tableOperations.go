@@ -29,6 +29,7 @@ type Table interface {
 	SearchByForeignKey(id string) ([]ComplexRow, error)
 	getSimpleName() string
 	table() table
+	save()
 }
 type Rows []Row
 type Row struct {
@@ -262,7 +263,15 @@ func (t *table) SearchByForeignKey(id string) ([]ComplexRow, error) {
 
 	return *complexRows, nil
 }
-
+func (t *table) save() {
+	tables := getTables(false)
+	for i, v := range tables {
+		if v.GetName() == t.GetName() {
+			tables[i] = *t
+		}
+	}
+	saveTables(tables)
+}
 func deleteByForeignKey(tb table, id string) error {
 	key, err := tb.SearchByForeignKey(id)
 	if err != nil {
