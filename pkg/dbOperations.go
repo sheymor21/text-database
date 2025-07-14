@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"text-database/pkg/utilities"
 )
 
@@ -199,7 +200,6 @@ func validateSql(sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
 	sqlS := strings.Split(sql, " ")
 	sqlS = utilities.RemoveEmptyIndex(sqlS)
-	switch strings.ToUpper(sqlS[0]) {
 	sqlS[0] = strings.ToUpper(sqlS[0])
 	switch sqlS[0] {
 	case "SELECT":
@@ -208,7 +208,7 @@ func validateSql(sql string) (SqlRows, error) {
 	case "CREATE":
 		break
 	case "UPDATE":
-		break
+		return sqlUpdate(sqlS)
 	case "DELETE":
 		break
 	default:
@@ -254,28 +254,77 @@ func sqlWhere(sqlS []string) []string {
 		return nil
 	}
 	params := sqlS[index+1:]
-	if len(params) < 3 {
-		params = fixWhereParams(params)
-	}
+	params = fixParams(params)
 	return params
 }
 
-func fixWhereParams(params []string) []string {
-	symbols := []string{"=", ">", "<", ">=", "<="}
-	for i, v := range params {
-		for _, s := range symbols {
-			if strings.Contains(v, s) {
-				if len(params) == 1 {
-					params = strings.Split(v, s)
-				} else {
-					params[i] = strings.ReplaceAll(v, s, "")
-				}
-				params = slices.Insert(params, 1, s)
-				return params
+func sqlUpdate(sqlS []string) (SqlRows, error) {
+	updateIndex := slices.Index(sqlS, "UPDATE")
+	tableName := sqlS[updateIndex+1]
+	tb, _ := getTableByName(tableName, true)
+	setIndex := slices.Index(sqlS, "SET")
+	whereParams := sqlWhere(sqlS)
+	var whereIndex int
+	if whereParams != nil {
+		whereIndex = slices.Index(sqlS, "WHERE")
+	}
+	newS := sqlS[setIndex+1 : whereIndex]
+	newS = fixParams(newS)
+	rows := tb.SearchAll(whereParams[0], whereParams[2])
+	for i := 0; i < len(newS); i += 3 {
+		for _, row := range rows {
+			err := tb.UpdateValue(newS[i], row.SearchValue("id"), newS[i+2])
+			if err != nil {
+				return SqlRows{}, err
 			}
 		}
 	}
-	return params
+	tb.save()
+	return SqlRows{
+		AffectRows: len(rows),
+		Rows:       nil,
+	}, nil
+
+}
+
+func fixParams(params []string) []string {
+	var wg sync.WaitGroup
+	ch := make(chan []string)
+	var checkedParams []string
+	for _, v := range params {
+		wg.Add(1)
+		go func(val string) {
+			defer wg.Done()
+			newS := replaceComparativeSymbol(val)
+			var newParams []string
+			if newS != nil {
+				newParams = append(newParams, newS...)
+			} else {
+				newParams = append(newParams, val)
+			}
+			ch <- newParams
+		}(v)
+		checkedParams = append(checkedParams, <-ch...)
+	}
+	wg.Wait()
+	close(ch)
+	return checkedParams
+}
+func replaceComparativeSymbol(value string) []string {
+	symbols := []string{"=", ">", "<", ">=", "<="}
+	for _, s := range symbols {
+		if strings.Contains(value, s) && value != s {
+			newS := strings.Split(value, s)
+			index := slices.Index(newS, "")
+			if index != -1 {
+				newS[index] = s
+			} else {
+				newS = slices.Insert(newS, 1, s)
+			}
+			return newS
+		}
+	}
+	return nil
 }
 func getSqlColumns(tb table, sqlS []string) []string {
 	fromIndex := slices.Index(sqlS, "FROM")

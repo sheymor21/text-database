@@ -65,22 +65,34 @@ func (s *databaseSuite) TestFromSql_Select_All() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	data, _ := s.db.FromSql("SELECT * FROM Users")
 	count := len(tb.GetRows())
-	if len(data) != count {
-		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data)))
+	if len(data.Rows) != count {
+		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data.Rows)))
 	}
 }
 func (s *databaseSuite) TestFromSql_Select() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	data, _ := s.db.FromSql("SELECT name , age FROM Users")
 	count := len(tb.GetRows())
-	if len(data) != count {
-		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data)))
+	if len(data.Rows) != count {
+		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data.Rows)))
 	}
 }
 func (s *databaseSuite) TestFromSql_Select_Where() {
 	data, _ := s.db.FromSql("SELECT name , age FROM Users WHERE age = 54")
-	if len(data) != 2 {
-		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(data)))
+	if len(data.Rows) != 2 {
+		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(data.Rows)))
+	}
+}
+
+func (s *databaseSuite) TestFromSql_Update() {
+	data, _ := s.db.FromSql("Update Users SET age = 25,name = pepe WHERE age = 32")
+	if data.AffectRows != 1 {
+		s.Fail("Expected 1 affected row", fmt.Sprintf("Recibe: %d", data.AffectRows))
+	}
+	tb, _ := s.db.GetTableByName("Users")
+	user, _ := tb.GetRowById("1")
+	if user.String() != "|1| 1 |2| pepe |3| 25" {
+		s.Fail("Expected |1| 1 |2| pepe |3| 25", fmt.Sprintf("Recibe: %s", user))
 	}
 }
 func TestDatabase(t *testing.T) {
