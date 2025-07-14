@@ -95,6 +95,17 @@ func (s *databaseSuite) TestFromSql_Update() {
 		s.Fail("Expected |1| 1 |2| pepe |3| 25", fmt.Sprintf("Recibe: %s", user))
 	}
 }
+func (s *databaseSuite) TestFromSql_Delete() {
+	data, _ := s.db.FromSql("Delete FROM Users WHERE age =54")
+	if data.AffectRows != 2 {
+		s.Fail("Expected 2 affected row", fmt.Sprintf("Recibe: %d", data.AffectRows))
+	}
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	if len(rows) != 2 {
+		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
+}
 func TestDatabase(t *testing.T) {
 	t.Run("TestSet: Database", func(t *testing.T) {
 		suite.Run(t, &databaseSuite{})

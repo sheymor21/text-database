@@ -26,7 +26,7 @@ func validateSql(sql string) (SqlRows, error) {
 	case "UPDATE":
 		return sqlUpdate(sqlS)
 	case "DELETE":
-		break
+		return sqlDelete(sqlS)
 	default:
 	}
 	return SqlRows{}, nil
@@ -100,6 +100,24 @@ func sqlUpdate(sqlS []string) (SqlRows, error) {
 		Rows:       nil,
 	}, nil
 
+}
+func sqlDelete(sqlS []string) (SqlRows, error) {
+	fromIndex := slices.Index(sqlS, "FROM")
+	tableName := sqlS[fromIndex+1]
+	tb, _ := getTableByName(tableName, true)
+	whereParams := sqlWhere(sqlS)
+	rows := tb.SearchAll(whereParams[0], whereParams[2])
+	for _, row := range rows {
+		err := tb.DeleteRow(row.SearchValue("id"), false)
+		if err != nil {
+			return SqlRows{}, err
+		}
+	}
+	tb.save()
+	return SqlRows{
+		AffectRows: len(rows),
+		Rows:       nil,
+	}, nil
 }
 func fixSqlParams(params []string) []string {
 	var wg sync.WaitGroup
