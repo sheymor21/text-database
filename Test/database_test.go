@@ -117,6 +117,20 @@ func (s *databaseSuite) TestFromSql_Delete() {
 		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(rows)))
 	}
 }
+func (s *databaseSuite) TestFromSql_Insert() {
+	data, err := s.db.FromSql("Insert INTO Users (id,name,age) VALUES (5,maria,20,6,carlitos,32)")
+	if err != nil {
+		s.ErrFail(err)
+	}
+	if data.AffectRows != 2 {
+		s.Fail("Expected 1 affected row", fmt.Sprintf("Recibe: %d", data.AffectRows))
+	}
+	tb, _ := s.db.GetTableByName("Users")
+	rows := tb.GetRows()
+	if len(rows) != 6 {
+		s.Fail("Expected len of 6", fmt.Sprintf("Recibe: %d", len(rows)))
+	}
+}
 func TestDatabase(t *testing.T) {
 	t.Run("TestSet: Database", func(t *testing.T) {
 		suite.Run(t, &databaseSuite{})

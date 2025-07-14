@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"sync"
@@ -14,6 +15,8 @@ type SqlRows struct {
 
 func validateSql(sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
+	sql = strings.ReplaceAll(sql, "(", " ")
+	sql = strings.ReplaceAll(sql, ")", " ")
 	sqlS := strings.Split(sql, " ")
 	sqlS = utilities.RemoveEmptyIndex(sqlS)
 	sqlS[0] = strings.ToUpper(sqlS[0])
@@ -27,6 +30,11 @@ func validateSql(sql string) (SqlRows, error) {
 		return sqlUpdate(sqlS)
 	case "DELETE":
 		return sqlDelete(sqlS)
+	case "INSERT":
+		if strings.ToUpper(sqlS[1]) != "INTO" {
+			return SqlRows{}, errors.New("invalid sql")
+		}
+		return sqlInsert(sqlS)
 	default:
 	}
 	return SqlRows{}, nil
@@ -118,6 +126,53 @@ func sqlDelete(sqlS []string) (SqlRows, error) {
 		AffectRows: len(rows),
 		Rows:       nil,
 	}, nil
+}
+func sqlInsert(sqlS []string) (SqlRows, error) {
+	insertIndex := slices.Index(sqlS, "INSERT")
+	tableName := sqlS[insertIndex+2]
+	valuesIndex := slices.Index(sqlS, "VALUES")
+	tb, _ := getTableByName(tableName, true)
+	columns := sqlS[insertIndex+3 : valuesIndex]
+	for _, v := range columns {
+		if !slices.Contains(tb.columns, v) {
+			return SqlRows{}, &NotFoundError{itemName: "Column: " + v + " in table: " + tableName}
+		}
+	}
+	if len(columns) != len(tb.columns)/2 {
+		return SqlRows{}, errors.New("column number does not match")
+	}
+
+	values := sqlS[valuesIndex+1:]
+	a := divideEachNewRow(len(columns), values)
+	for _, v := range a {
+		tb.addValuesIdGenerationOff(v)
+	}
+	tb.save()
+	d := len(a)
+	return SqlRows{
+		AffectRows: d,
+		Rows:       nil,
+	}, nil
+}
+func divideEachNewRow(columns int, values []string) [][]string {
+	if columns == len(values) {
+		return [][]string{values}
+	}
+	a := &[][]string{}
+	var b []string
+	count := 0
+	for _, v := range values {
+		if columns != count {
+			b = append(b, v)
+			count++
+		}
+		if columns == count {
+			*a = append(*a, b)
+			b = []string{}
+			count = 0
+		}
+	}
+	return *a
 }
 func fixSqlParams(params []string) []string {
 	var wg sync.WaitGroup
