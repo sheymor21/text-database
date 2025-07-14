@@ -18,7 +18,7 @@ type Db interface {
 	DeleteTable(tableName string)
 	AddForeignKey(key ForeignKey) error
 	AddForeignKeys(keys []ForeignKey) error
-	FromSql(sql string) (Rows, error)
+	FromSql(sql string) (SqlRows, error)
 }
 type db struct {
 	name   string
@@ -35,7 +35,10 @@ type DbConfig struct {
 	DatabaseName  string
 	DataConfig    []DataConfig
 }
-
+type SqlRows struct {
+	AffectRows int
+	Rows       Rows
+}
 type ForeignKey struct {
 	TableName         string
 	ColumnName        string
@@ -189,14 +192,16 @@ func (d *db) DeleteTable(tableName string) {
 
 	saveTables(tables)
 }
-func (d *db) FromSql(sql string) (Rows, error) {
+func (d *db) FromSql(sql string) (SqlRows, error) {
 	return validateSql(sql)
 }
-func validateSql(sql string) (Rows, error) {
+func validateSql(sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
 	sqlS := strings.Split(sql, " ")
 	sqlS = utilities.RemoveEmptyIndex(sqlS)
 	switch strings.ToUpper(sqlS[0]) {
+	sqlS[0] = strings.ToUpper(sqlS[0])
+	switch sqlS[0] {
 	case "SELECT":
 		result := sqlSelect(sqlS)
 		return result, nil
@@ -208,10 +213,9 @@ func validateSql(sql string) (Rows, error) {
 		break
 	default:
 	}
-	return nil, nil
+	return SqlRows{}, nil
 }
-
-func sqlSelect(sqlS []string) Rows {
+func sqlSelect(sqlS []string) SqlRows {
 	index := slices.Index(sqlS, "FROM")
 	tableName := sqlS[index+1]
 	tb, _ := getTableByName(tableName, true)
@@ -238,9 +242,12 @@ func sqlSelect(sqlS []string) Rows {
 	} else {
 		finalResult = sqlValues
 	}
-	return finalResult
+	sqlRows := &SqlRows{
+		AffectRows: 0,
+		Rows:       finalResult,
+	}
+	return *sqlRows
 }
-
 func sqlWhere(sqlS []string) []string {
 	index := slices.Index(sqlS, "WHERE")
 	if index == -1 {
