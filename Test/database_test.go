@@ -78,14 +78,21 @@ func (s *databaseSuite) TestFromSql_Select() {
 	}
 }
 func (s *databaseSuite) TestFromSql_Select_Where() {
-	data, _ := s.db.FromSql("SELECT name , age FROM Users WHERE age = 54")
+	data, err := s.db.FromSql("SELECT name , age FROM Users WHERE age = 54")
+
+	if err != nil {
+		s.ErrFail(err)
+	}
 	if len(data.Rows) != 2 {
 		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(data.Rows)))
 	}
 }
 
 func (s *databaseSuite) TestFromSql_Update() {
-	data, _ := s.db.FromSql("Update Users SET age = 25,name = pepe WHERE age = 32")
+	data, err := s.db.FromSql("Update Users SET age = 25,name = pepe WHERE age = 32")
+	if err != nil {
+		s.ErrFail(err)
+	}
 	if data.AffectRows != 1 {
 		s.Fail("Expected 1 affected row", fmt.Sprintf("Recibe: %d", data.AffectRows))
 	}
@@ -96,7 +103,11 @@ func (s *databaseSuite) TestFromSql_Update() {
 	}
 }
 func (s *databaseSuite) TestFromSql_Delete() {
-	data, _ := s.db.FromSql("Delete FROM Users WHERE age =54")
+	data, err := s.db.FromSql("Delete FROM Users WHERE age =54")
+
+	if err != nil {
+		s.ErrFail(err)
+	}
 	if data.AffectRows != 2 {
 		s.Fail("Expected 2 affected row", fmt.Sprintf("Recibe: %d", data.AffectRows))
 	}
