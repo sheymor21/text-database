@@ -70,7 +70,7 @@ func sqlWhere(sqlS []string) []string {
 		return nil
 	}
 	params := sqlS[index+1:]
-	params = fixParams(params)
+	params = fixSqlParams(params)
 	return params
 }
 func sqlUpdate(sqlS []string) (SqlRows, error) {
@@ -84,7 +84,7 @@ func sqlUpdate(sqlS []string) (SqlRows, error) {
 		whereIndex = slices.Index(sqlS, "WHERE")
 	}
 	newS := sqlS[setIndex+1 : whereIndex]
-	newS = fixParams(newS)
+	newS = fixSqlParams(newS)
 	rows := tb.SearchAll(whereParams[0], whereParams[2])
 	for i := 0; i < len(newS); i += 3 {
 		for _, row := range rows {
@@ -101,7 +101,7 @@ func sqlUpdate(sqlS []string) (SqlRows, error) {
 	}, nil
 
 }
-func fixParams(params []string) []string {
+func fixSqlParams(params []string) []string {
 	var wg sync.WaitGroup
 	ch := make(chan []string)
 	var checkedParams []string
