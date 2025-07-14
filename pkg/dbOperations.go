@@ -217,6 +217,7 @@ func sqlSelect(sqlS []string) Rows {
 	tb, _ := getTableByName(tableName, true)
 	rows := tb.GetRows()
 	columns := getSqlColumns(tb, sqlS)
+	whereParams := sqlWhere(sqlS)
 
 	var result []string
 	for i := 0; i < len(rows); i++ {
@@ -225,8 +226,49 @@ func sqlSelect(sqlS []string) Rows {
 			result = append(result, value)
 		}
 	}
-	finalResult := valuesBuilderSql(columns, result)
+
+	sqlValues := valuesBuilderSql(columns, result)
+	var finalResult Rows
+	if whereParams != nil {
+		for _, v := range sqlValues {
+			if v.SearchValue(whereParams[0]) == whereParams[2] {
+				finalResult = append(finalResult, v)
+			}
+		}
+	} else {
+		finalResult = sqlValues
+	}
 	return finalResult
+}
+
+func sqlWhere(sqlS []string) []string {
+	index := slices.Index(sqlS, "WHERE")
+	if index == -1 {
+		return nil
+	}
+	params := sqlS[index+1:]
+	if len(params) < 3 {
+		params = fixWhereParams(params)
+	}
+	return params
+}
+
+func fixWhereParams(params []string) []string {
+	symbols := []string{"=", ">", "<", ">=", "<="}
+	for i, v := range params {
+		for _, s := range symbols {
+			if strings.Contains(v, s) {
+				if len(params) == 1 {
+					params = strings.Split(v, s)
+				} else {
+					params[i] = strings.ReplaceAll(v, s, "")
+				}
+				params = slices.Insert(params, 1, s)
+				return params
+			}
+		}
+	}
+	return params
 }
 func getSqlColumns(tb table, sqlS []string) []string {
 	fromIndex := slices.Index(sqlS, "FROM")

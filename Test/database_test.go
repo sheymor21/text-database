@@ -77,6 +77,12 @@ func (s *databaseSuite) TestFromSql_Select() {
 		s.Fail("Expected len of 4", fmt.Sprintf("Recibe: %d", len(data)))
 	}
 }
+func (s *databaseSuite) TestFromSql_Select_Where() {
+	data, _ := s.db.FromSql("SELECT name , age FROM Users WHERE age = 54")
+	if len(data) != 2 {
+		s.Fail("Expected len of 2", fmt.Sprintf("Recibe: %d", len(data)))
+	}
+}
 func TestDatabase(t *testing.T) {
 	t.Run("TestSet: Database", func(t *testing.T) {
 		suite.Run(t, &databaseSuite{})
