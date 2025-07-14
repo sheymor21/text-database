@@ -150,6 +150,7 @@ func (t *table) UpdateValue(columnName string, id string, newValue string) error
 			rowSlice := strings.Split(row.value, "|")
 			rowSlice[i+1] = " " + newValue + " "
 			row.value = strings.Join(rowSlice, "|")
+			row.value = strings.Trim(row.value, " ")
 			updateTable, err := updateRow(t.rawTable, id, row.value)
 			if err != nil {
 				return err

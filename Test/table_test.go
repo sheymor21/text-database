@@ -63,7 +63,7 @@ func (s *tableSuite) TestUpdateValue() {
 	tb := utilities.Must(s.db.GetTableByName("Users"))
 	_ = tb.UpdateValue("age", "2", "30")
 	rows := tb.GetRows()
-	if rows[1].String() != "|1| 2 |2| juan |3| 30 " {
+	if rows[1].String() != "|1| 2 |2| juan |3| 30" {
 		s.Fail("Expected |1| 2 |2| juan |3| 30", fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
