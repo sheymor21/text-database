@@ -536,7 +536,10 @@ func addValues(table table, values []string, idGenerate bool) table {
 	return table
 }
 func saveTables(tables []table) {
-	newTable := addTableFrontiers(tables)
+	var newTable string
+	if len(tables) != 0 {
+		newTable = addTableFrontiers(tables)
+	}
 	if encryptionKeyExist {
 		newTable = utilities.Must(globalEncoderKey.Encode(newTable))
 	}
