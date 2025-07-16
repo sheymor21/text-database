@@ -1,4 +1,4 @@
-package text_database
+package tdb
 
 import (
 	"crypto/aes"
@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"github.com/sheymor21/tdb/utilities"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"io"
 	"os"
 	"strings"

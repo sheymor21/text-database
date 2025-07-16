@@ -1,8 +1,8 @@
-package text_database
+package tdb
 
 import (
 	"fmt"
-	"github.com/sheymor21/tdb/utilities"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"sort"
 	"strconv"
