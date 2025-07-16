@@ -1,4 +1,4 @@
-module github.com/sheymor21/text-database
+module github.com/sheymor21/tdb
 
 go 1.23
 
