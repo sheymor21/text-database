@@ -2,7 +2,7 @@ package text_database
 
 import (
 	"fmt"
-	"github.com/sheymor21/text-database/utilities"
+	"github.com/sheymor21/tdb/utilities"
 	"os"
 	"sort"
 	"strconv"

@@ -3,7 +3,7 @@ package text_database
 import (
 	"errors"
 	"fmt"
-	"github.com/sheymor21/text-database/utilities"
+	"github.com/sheymor21/tdb/utilities"
 	"os"
 	"slices"
 	"strings"
