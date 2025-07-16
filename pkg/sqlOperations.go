@@ -24,27 +24,35 @@ func validateSql(d db, sql string) (SqlRows, error) {
 	case "SELECT":
 		upper := strings.ToUpper(sql)
 		if !strings.Contains(upper, "FROM") {
-			return SqlRows{}, errors.New("invalid sql")
+			return SqlRows{}, &SqlSyntaxError{itemName: "FROM"}
 		}
 		result := sqlSelect(sqlS)
 		return result, nil
-	case "CREATE":
-		break
 	case "UPDATE":
+		if strings.ToUpper(sqlS[2]) != "SET" {
+			return SqlRows{}, &SqlSyntaxError{itemName: "SET"}
+		}
 		return sqlUpdate(sqlS)
 	case "DELETE":
+		if strings.ToUpper(sqlS[1]) != "FROM" {
+			return SqlRows{}, &SqlSyntaxError{itemName: "FROM"}
+		}
 		return sqlDelete(sqlS)
 	case "INSERT":
 		if strings.ToUpper(sqlS[1]) != "INTO" {
-			return SqlRows{}, errors.New("invalid sql")
+			return SqlRows{}, &SqlSyntaxError{itemName: "INTO"}
+		}
+		upper := strings.ToUpper(sql)
+		if !strings.Contains(upper, "VALUES") {
+			return SqlRows{}, &SqlSyntaxError{itemName: "VALUES"}
 		}
 		return sqlInsert(sqlS)
 	case "DROP":
 		err := sqlDrop(d, sqlS)
 		return SqlRows{}, err
 	default:
+		return SqlRows{}, &SqlSyntaxError{itemName: "sql option"}
 	}
-	return SqlRows{}, nil
 }
 func sqlDrop(d db, sqlS []string) error {
 	tableName := sqlS[2]
