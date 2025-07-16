@@ -1,9 +1,9 @@
-package tdb
+package text_database
 
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sheymor21/text-database/tdb/utilities"
+	"github.com/sheymor21/text-database/utilities"
 	"os"
 	"slices"
 	"sort"

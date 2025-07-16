@@ -1,8 +1,8 @@
-package tdb
+package text_database
 
 import (
 	"errors"
-	"github.com/sheymor21/text-database/tdb/utilities"
+	"github.com/sheymor21/text-database/utilities"
 	"slices"
 	"strings"
 	"sync"

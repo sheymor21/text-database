@@ -1,9 +1,9 @@
-package tdb
+package text_database
 
 import (
 	"errors"
 	"fmt"
-	"github.com/sheymor21/text-database/tdb/utilities"
+	"github.com/sheymor21/text-database/utilities"
 	"os"
 	"slices"
 	"strings"
