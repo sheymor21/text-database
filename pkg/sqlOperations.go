@@ -22,6 +22,10 @@ func validateSql(d db, sql string) (SqlRows, error) {
 	sqlS[0] = strings.ToUpper(sqlS[0])
 	switch sqlS[0] {
 	case "SELECT":
+		upper := strings.ToUpper(sql)
+		if !strings.Contains(upper, "FROM") {
+			return SqlRows{}, errors.New("invalid sql")
+		}
 		result := sqlSelect(sqlS)
 		return result, nil
 	case "CREATE":
