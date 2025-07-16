@@ -2,7 +2,7 @@ package tdb
 
 import (
 	"errors"
-	"github.com/sheymor21/text-database/tdb/utilities"
+	"github.com/sheymor21/text-database/tdb/tdb/utilities"
 	"slices"
 	"strings"
 	"sync"

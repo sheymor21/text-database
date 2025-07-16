@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"github.com/sheymor21/text-database/tdb/utilities"
+	"github.com/sheymor21/text-database/tdb/tdb/utilities"
 	"io"
 	"os"
 	"strings"
