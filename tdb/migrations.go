@@ -1,4 +1,4 @@
-package pkg
+package tdb
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func migrationBuilder(c DbConfig, migrationName string) []byte {
 	imports := `
 package migrations
 
-import "text-database/pkg"
+import "text-database/tdb"
 `
 	constants := fmt.Sprintf(`
 	// migrationName        = %q
@@ -56,7 +56,7 @@ import "text-database/pkg"
 	functionGenerateTable := fmt.Sprintf(`
 func generate%s() {
 %s
-	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "%s"}
+	config := tdb.DbConfig{EncryptionKey: "", DatabaseName: "%s"}
 	db, err := config.CreateDatabase()
 	if err != nil {
 		return
