@@ -1,7 +1,5 @@
 ## Database Configuration with Initial Data
 
----
-
 The database configuration allows you to initialize your database with predefined data structures and values. You can
 specify table names, column definitions, and initial row values during the database creation process. The configuration
 supports optional encryption for data security.

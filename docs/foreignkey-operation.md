@@ -1,7 +1,5 @@
 ## Foreign Key Relationships
 
----
-
 The database system supports foreign key relationships between tables, allowing you to establish connections and
 maintain referential integrity between related data. Below are the main operations available for working with foreign
 keys.

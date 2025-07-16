@@ -1,6 +1,5 @@
 ## Table of content
 
----
 <!-- ts -->
   * [Table Operations](#table-operations)
     * [Creating Tables](#creating-tables)
@@ -10,9 +9,7 @@
 <!-- te -->
 ## Table Operations
 
----
 Database provides multiple ways to manipulate tables. Below are the main operations available.
-
 
 ### Creating Tables
 

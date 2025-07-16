@@ -5,7 +5,6 @@ A simple, text-based database system written in Go that stores data in plain tex
 support.
 ## Features
 
----
 - **Text-based storage**: Data is stored in human-readable text files
 - **Table operations**: Create, read, update, and delete tables
 - **Row operations**: Insert, update, delete, and query rows
@@ -16,7 +15,6 @@ support.
 
 # Table of contents
 
----
 - [Installation](#features)
 - [Quick Start](#quick-start)
 - [File Structure](#file-structure)
@@ -28,12 +26,10 @@ support.
 
 ## Installation
 
----
     go get github.com/sheymor21/text-database/tdb
 
 ## Quick Start
 
----
 Getting started with the Text Database is straightforward. Follow these simple steps to create and initialize your database:
 ```go
 package main
@@ -64,7 +60,6 @@ db.PrintTables()
 
 ## File Structure
 
----
 The Text Database uses a custom, human-readable format to store data in plain text files. This structure is designed to be both easily parseable by the application and readable by humans for debugging or manual inspection.
 ```
 ////
@@ -78,12 +73,10 @@ The Text Database uses a custom, human-readable format to store data in plain te
 ```
 ## Contributing
 
----
 Feel free to contribute to this project by submitting issues or pull requests.
 
 ## License
 
----
 This project is open source and available under the MIT License.
 
 ## Author

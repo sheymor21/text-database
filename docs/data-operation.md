@@ -1,6 +1,5 @@
 ## Table of content
 
----
 <!-- ts -->
   * [Data Operations](#data-operations)
     * [Adding Data to Tables](#adding-data-to-tables)
