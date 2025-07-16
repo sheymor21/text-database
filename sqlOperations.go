@@ -1,4 +1,4 @@
-package tdb
+package text_database
 
 import (
 	"errors"
