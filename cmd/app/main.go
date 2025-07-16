@@ -7,24 +7,19 @@ import (
 )
 
 func main() {
-	data := []pkg.DataConfig{
-		{
-			TableName: "Esto",
-			Columns:   []string{"name", "age"},
-			Values:    []pkg.Values{{"1", "carlos", "32"}, {"2", "jose", "23"}},
-		},
 
-		{
-			TableName: "Segunda Tabla",
-			Columns:   []string{"Nombre", "Direccion"},
-			Values:    []pkg.Values{{"1", "Perez", "Manuguayabo"}},
-		},
-	}
+	data := getExampleDataConfig()
 	config := pkg.DbConfig{EncryptionKey: "", DatabaseName: "database.txt", DataConfig: data}
-	_, err := config.CreateDatabase()
+	db, err := config.CreateDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+	foreignKeys := getExampleForeignKeys()
+	errF := db.AddForeignKeys(foreignKeys)
+	if errF != nil {
+		fmt.Println(errF)
 	}
 	migrationName := flag.String("ma", "", "Name of the migration")
 	flag.Parse()
