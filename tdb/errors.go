@@ -1,4 +1,4 @@
-package text_database
+package tdb
 
 import (
 	"fmt"

@@ -1,11 +1,11 @@
-package text_database
+package tdb
 
 import (
 	"errors"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"slices"
 	"strings"
 	"sync"
-	"text-database/pkg/utilities"
 )
 
 type SqlRows struct {

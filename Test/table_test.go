@@ -3,11 +3,11 @@ package Test
 import (
 	"errors"
 	"fmt"
+	"github.com/sheymor21/text-database/tdb"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"github.com/stretchr/testify/suite"
 	"strings"
 	"testing"
-	"text-database/pkg"
-	"text-database/pkg/utilities"
 )
 
 func (s *tableSuite) TestGetRowById() {
@@ -90,7 +90,7 @@ func (s *tableSuite) TestDeleteColumn() {
 func (s *tableSuite) TestAddValue_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.AddValue("test", "value")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -98,7 +98,7 @@ func (s *tableSuite) TestAddValue_ReturnColumnError() {
 func (s *tableSuite) TestUpdateColumnName_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.UpdateColumnName("test", "value")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -106,7 +106,7 @@ func (s *tableSuite) TestUpdateColumnName_ReturnColumnError() {
 func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.UpdateValue("test", "value", "value")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -114,7 +114,7 @@ func (s *tableSuite) TestUpdateValue_ReturnColumnError() {
 func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.UpdateValue("name", "test", "value")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -122,7 +122,7 @@ func (s *tableSuite) TestUpdateValue_ReturnIdError() {
 func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.DeleteRow("test", false)
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -130,7 +130,7 @@ func (s *tableSuite) TestDeleteRow_ReturnIdError() {
 func (s *tableSuite) TestDeleteColumn_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	err := tb.DeleteColumn("test")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -138,7 +138,7 @@ func (s *tableSuite) TestDeleteColumn_ReturnIdError() {
 func (s *tableSuite) TestGetRowById_ReturnIdError() {
 	tb, _ := s.db.GetTableByName("Users")
 	_, err := tb.GetRowById("test")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -179,7 +179,7 @@ func (s *tableSuite) TestOrderBy_ReturnColumnError() {
 	tb, _ := s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	err := rows.OrderByAscend("Email")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -206,7 +206,7 @@ func (s *tableSuite) TestSearchAll() {
 	}
 }
 func (s *tableSuiteWithStaticData) TestAddForeignKeys() {
-	fk := &pkg.ForeignKey{
+	fk := &tdb.ForeignKey{
 		TableName:         "Users",
 		ColumnName:        "id",
 		ForeignTableName:  "Houses",
@@ -218,20 +218,20 @@ func (s *tableSuiteWithStaticData) TestAddForeignKeys() {
 	}
 }
 func (s *tableSuiteWithStaticData) TestAddForeignKeys_ReturnTableNotFoundError() {
-	fk := &pkg.ForeignKey{
+	fk := &tdb.ForeignKey{
 		TableName:         "test",
 		ColumnName:        "id",
 		ForeignTableName:  "Houses",
 		ForeignColumnName: "id_owner",
 	}
 	err := s.db.AddForeignKey(*fk)
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 	}
 }
 func (s *tableSuiteWithStaticData) TestSearchByForeignKey() {
 
-	fk := &pkg.ForeignKey{
+	fk := &tdb.ForeignKey{
 		TableName:         "Users",
 		ColumnName:        "id",
 		ForeignTableName:  "Houses",
@@ -259,7 +259,7 @@ func (s *tableSuiteWithStaticData) TestSearchByForeignKey() {
 
 }
 func (s *tableSuiteWithStaticData) TestDeleteByForeignKey() {
-	fk := &pkg.ForeignKey{
+	fk := &tdb.ForeignKey{
 		TableName:         "Users",
 		ColumnName:        "id",
 		ForeignTableName:  "Houses",
@@ -286,7 +286,7 @@ func (s *tableSuiteWithStaticData) TestDeleteByForeignKey() {
 	}
 }
 
-func getIdAndIndex(r pkg.Rows) (string, int) {
+func getIdAndIndex(r tdb.Rows) (string, int) {
 	var index int
 	var id string
 	for i, row := range r {

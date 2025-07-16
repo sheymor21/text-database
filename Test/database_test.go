@@ -3,10 +3,10 @@ package Test
 import (
 	"errors"
 	"fmt"
+	"github.com/sheymor21/text-database/tdb"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"github.com/stretchr/testify/suite"
 	"testing"
-	"text-database/pkg"
-	"text-database/pkg/utilities"
 )
 
 func (s *databaseSuite) TestGetTables() {
@@ -58,7 +58,7 @@ func (s *databaseSuite) TestGetTableByName() {
 }
 func (s *databaseSuite) TestGetTableByName_ReturnNameError() {
 	_, err := s.db.GetTableByName("test")
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}
@@ -141,7 +141,7 @@ func (s *databaseSuite) TestFromSql_Drop() {
 	}
 	_, err = s.db.GetTableByName("Users")
 
-	var example *pkg.NotFoundError
+	var example *tdb.NotFoundError
 	if !errors.As(err, &example) {
 		s.ErrFail(err)
 	}

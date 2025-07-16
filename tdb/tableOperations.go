@@ -1,13 +1,13 @@
-package text_database
+package tdb
 
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"slices"
 	"sort"
 	"strings"
-	"text-database/pkg/utilities"
 )
 
 type Table interface {

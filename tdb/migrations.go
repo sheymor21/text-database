@@ -1,12 +1,12 @@
-package text_database
+package tdb
 
 import (
 	"fmt"
+	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
-	"text-database/pkg/utilities"
 	"time"
 )
 
