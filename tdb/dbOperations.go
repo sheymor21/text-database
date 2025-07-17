@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 )
 
 type Db interface {
@@ -302,23 +303,52 @@ func validateDatabaseName(name string) error {
 	return nil
 }
 func checkDataConfig(d []DataConfig) error {
+	var wg sync.WaitGroup
+	var builder strings.Builder
+	errs := &[]error{}
+	ch := make(chan error)
 	for _, v := range d {
-		for _, iv := range v.Values {
+		wg.Add(1)
+		go func(val DataConfig) {
+			defer wg.Done()
+			err := validateDataRequirement(val)
+			ch <- err
+		}(v)
+		if err := <-ch; err != nil {
+			*errs = append(*errs, <-ch)
+		}
+	}
+	close(ch)
+	wg.Wait()
 
-			if v.TableName == "" {
-				return errors.New("table name is required")
-			}
-			if len(v.Columns) == 0 {
-				return errors.New("columns are required")
-			}
+	for _, err := range *errs {
+		if err != nil {
+			builder.WriteString(err.Error() + "\n")
+		}
+	}
+	if len(*errs) > 0 {
+		return errors.New(builder.String())
+	}
+	return nil
+}
+func validateDataRequirement(d DataConfig) error {
+	for _, v := range d.Values {
 
-			l := len(v.Columns) + 1
-			if l != len(iv) {
-				message := fmt.Sprintf("columns and values must have the same length, colums:%d != values:%d, table: %s", l, len(iv), v.TableName)
-				return errors.New(message)
-			}
+		if d.TableName == "" {
+			return errors.New("table name is required")
+		}
+		if len(d.Columns) == 0 {
+			return errors.New("columns are required")
 		}
 
+		l := len(d.Columns)
+		if strings.ToLower(d.Columns[0]) != "id" {
+			l++
+		}
+		if l != len(v) {
+			message := fmt.Sprintf("columns and values must have the same length, colums:%d != values:%d, table: %s", l, len(v), d.TableName)
+			return errors.New(message)
+		}
 	}
 	return nil
 }
