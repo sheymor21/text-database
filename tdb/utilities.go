@@ -1,18 +1,18 @@
-package utilities
+package tdb
 
 import (
 	"errors"
 	"os"
 )
 
-func IsFileExist(filename string) bool {
+func isFileExist(filename string) bool {
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
 	return true
 }
 
-func RemoveEmptyIndex(data []string) []string {
+func removeEmptyIndex(data []string) []string {
 
 	filteredData := make([]string, 0)
 	for _, d := range data {

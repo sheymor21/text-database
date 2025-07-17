@@ -3,7 +3,6 @@ package Test
 import (
 	"fmt"
 	"github.com/sheymor21/text-database/tdb"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"github.com/stretchr/testify/suite"
 	"os"
 	"reflect"
@@ -40,7 +39,7 @@ func (s *databaseSuite) SetupTest() {
 }
 
 func (s *databaseSuite) TearDownTest() {
-	utilities.ErrorHandler(os.Remove("testDb.txt"))
+	errorHandler(os.Remove("testDb.txt"))
 }
 
 func (s *tableSuite) SetupTest() {
@@ -49,7 +48,7 @@ func (s *tableSuite) SetupTest() {
 }
 
 func (s *tableSuite) TearDownTest() {
-	utilities.ErrorHandler(os.Remove("testDb.txt"))
+	errorHandler(os.Remove("testDb.txt"))
 }
 func (s *tableSuiteWithStaticData) SetupTest() {
 	dataConfig := []tdb.DataConfig{
@@ -85,7 +84,7 @@ func (s *tableSuiteWithStaticData) SetupTest() {
 }
 
 func (s *tableSuiteWithStaticData) TearDownTest() {
-	utilities.ErrorHandler(os.Remove("testDbTableWithStaticData.txt"))
+	errorHandler(os.Remove("testDbTableWithStaticData.txt"))
 }
 func (s *databaseWithEncryptionSuite) SetupTest() {
 	config := tdb.DbConfig{EncryptionKey: "", DatabaseName: "testDbWithEncryption.txt"}
@@ -93,7 +92,7 @@ func (s *databaseWithEncryptionSuite) SetupTest() {
 }
 
 func (s *databaseWithEncryptionSuite) TearDownTest() {
-	utilities.ErrorHandler(os.Remove("testDbWithEncryption.txt"))
+	errorHandler(os.Remove("testDbWithEncryption.txt"))
 }
 
 func (s *databaseWithStaticDataSuite) SetupTest() {
@@ -105,11 +104,11 @@ func (s *databaseWithStaticDataSuite) SetupTest() {
 		},
 	}
 	config := tdb.DbConfig{EncryptionKey: "", DatabaseName: "testDbWithStaticData.txt", DataConfig: dataConfig}
-	s.db = utilities.Must(config.CreateDatabase())
+	s.db, _ = config.CreateDatabase()
 }
 
 func (s *databaseWithStaticDataSuite) TearDownTest() {
-	utilities.ErrorHandler(os.Remove("testDbWithStaticData.txt"))
+	errorHandler(os.Remove("testDbWithStaticData.txt"))
 }
 
 func (s *tableSuite) ErrFail(err error) {
@@ -131,4 +130,9 @@ func (s *databaseWithStaticDataSuite) ErrFail(err error) {
 	recibe := fmt.Sprintf("Recibe: %s", reflect.TypeOf(err))
 	message := fmt.Sprintf("Message: %s", err.Error())
 	s.Fail(expected, recibe, message)
+}
+func errorHandler(e error) {
+	if e != nil {
+		panic(e)
+	}
 }

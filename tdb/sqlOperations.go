@@ -2,7 +2,6 @@ package tdb
 
 import (
 	"errors"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"slices"
 	"strings"
 	"sync"
@@ -18,7 +17,7 @@ func validateSql(d db, sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, "(", " ")
 	sql = strings.ReplaceAll(sql, ")", " ")
 	sqlS := strings.Split(sql, " ")
-	sqlS = utilities.RemoveEmptyIndex(sqlS)
+	sqlS = removeEmptyIndex(sqlS)
 	sqlS[0] = strings.ToUpper(sqlS[0])
 	switch sqlS[0] {
 	case "SELECT":
@@ -256,7 +255,7 @@ func getSqlColumns(tb table, sqlS []string) []string {
 func valuesBuilderSql(sqlColumns []string, sqlValues []string) Rows {
 	columns := columnsBuilder(sqlColumns)
 	columnsS := strings.Split(columns, " ")
-	formattedColumns := utilities.RemoveEmptyIndex(columnsS)
+	formattedColumns := removeEmptyIndex(columnsS)
 	count := len(columnsS)
 	for i := 0; i < count; i += 2 {
 		formattedColumns[i] = strings.ReplaceAll(formattedColumns[i], "[", "|")

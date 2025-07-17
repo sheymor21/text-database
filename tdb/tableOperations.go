@@ -3,7 +3,6 @@ package tdb
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"slices"
 	"sort"
@@ -283,7 +282,7 @@ func deleteRow(tb table, id string) (table, error) {
 	rowSlice := strings.Split(tb.rawTable, "\n")
 	index := slices.Index(rowSlice, row.value)
 	newRow := slices.Replace(rowSlice, index, index+1, "")
-	newRow = utilities.RemoveEmptyIndex(newRow)
+	newRow = removeEmptyIndex(newRow)
 	rowString := strings.Join(newRow, "\n")
 	tb.rawTable = "\n" + rowString + "\n"
 
@@ -402,7 +401,7 @@ func updateRow(table string, id string, newRow string) (string, error) {
 }
 func valueBuilder(table table, columnName string, value string) (string, error) {
 	co := getColumns(table.rawTable)
-	co = utilities.RemoveEmptyIndex(co)
+	co = removeEmptyIndex(co)
 	if !slices.Contains(co, columnName) {
 		return "", &NotFoundError{itemName: "Column"}
 	}
@@ -429,7 +428,7 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 }
 func valuesBuilder(table string, values []Row, idGenerate bool) string {
 	co := getColumns(table)
-	co = utilities.RemoveEmptyIndex(co)
+	co = removeEmptyIndex(co)
 	count := len(co)
 
 	for i := 0; i < count; i += 2 {
@@ -474,7 +473,7 @@ func saveTables(tables []table) {
 		newTable = addTableFrontiers(tables)
 	}
 	if encryptionKeyExist {
-		newTable = utilities.Must(globalEncoderKey.Encode(newTable))
+		newTable = must(globalEncoderKey.Encode(newTable))
 	}
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
+	errorHandler(os.WriteFile(dbName, []byte(newTable), 0666))
 }

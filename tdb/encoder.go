@@ -7,29 +7,28 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"io"
 	"os"
 	"strings"
 )
 
-type SecureTextEncoder struct {
+type secureTextEncoder struct {
 	key []byte
 }
 
-var globalEncoderKey SecureTextEncoder
+var globalEncoderKey secureTextEncoder
 
-func NewSecureTextEncoder(secretKey string) *SecureTextEncoder {
+func newSecureTextEncoder(secretKey string) *secureTextEncoder {
 	hasher := sha256.New()
 	hasher.Write([]byte(secretKey))
 	key := hasher.Sum(nil)
 
-	return &SecureTextEncoder{
+	return &secureTextEncoder{
 		key: key,
 	}
 }
 
-func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
+func (e *secureTextEncoder) Encode(plainText string) (string, error) {
 	// Create cipher block
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
@@ -60,7 +59,7 @@ func (e *SecureTextEncoder) Encode(plainText string) (string, error) {
 
 }
 
-func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
+func (e *secureTextEncoder) Decode(encodedText string) (string, error) {
 	encodedText = strings.Replace(encodedText, "ENG", "", 1)
 	ciphertext, err := base64.StdEncoding.DecodeString(encodedText)
 	if err != nil {
@@ -90,27 +89,27 @@ func (e *SecureTextEncoder) Decode(encodedText string) (string, error) {
 
 	return string(plaintext), nil
 }
-func (e *SecureTextEncoder) ReadAndDecode(dbName string) string {
-	data := string(utilities.Must(os.ReadFile(dbName)))
+func (e *secureTextEncoder) readAndDecode(dbName string) string {
+	data := string(must(os.ReadFile(dbName)))
 	if encryptionKeyExist {
-		data = utilities.Must(e.Decode(data))
+		data = must(e.Decode(data))
 	}
 	return data
 }
 
-func IsEncode(text string) bool {
+func isEncode(text string) bool {
 	if strings.HasPrefix(text, "ENG") {
 		return true
 	}
 	return false
 }
 
-func EncodeAndSave(data string) {
-	encodeData := utilities.Must(globalEncoderKey.Encode(data))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(encodeData), 0644))
+func encodeAndSave(data string) {
+	encodeData := must(globalEncoderKey.Encode(data))
+	errorHandler(os.WriteFile(dbName, []byte(encodeData), 0644))
 }
 
-func DecodeAndSave(data string) {
-	decodeData := utilities.Must(globalEncoderKey.Decode(data))
-	utilities.ErrorHandler(os.WriteFile(dbName, []byte(decodeData), 0644))
+func decodeAndSave(data string) {
+	decodeData := must(globalEncoderKey.Decode(data))
+	errorHandler(os.WriteFile(dbName, []byte(decodeData), 0644))
 }

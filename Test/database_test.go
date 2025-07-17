@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sheymor21/text-database/tdb"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -50,7 +49,7 @@ func (s *databaseWithStaticDataSuite) TestStaticData() {
 	}
 }
 func (s *databaseSuite) TestGetTableByName() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	if tb.GetName() != "-----Users-----" {
 		s.Fail("Expected Users Table", fmt.Sprintf("Recibe: %s", tb))
 
@@ -65,7 +64,7 @@ func (s *databaseSuite) TestGetTableByName_ReturnNameError() {
 }
 
 func (s *databaseSuite) TestFromSql_Select_All() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	data, _ := s.db.FromSql("SELECT * FROM Users")
 	count := len(tb.GetRows())
 	if len(data.Rows) != count {
@@ -73,7 +72,7 @@ func (s *databaseSuite) TestFromSql_Select_All() {
 	}
 }
 func (s *databaseSuite) TestFromSql_Select() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	data, _ := s.db.FromSql("SELECT name , age FROM Users")
 	count := len(tb.GetRows())
 	if len(data.Rows) != count {

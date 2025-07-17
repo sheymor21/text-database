@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sheymor21/text-database/tdb"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"github.com/stretchr/testify/suite"
 	"strings"
 	"testing"
 )
 
 func (s *tableSuite) TestGetRowById() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	row, _ := tb.GetRowById("2")
 	result := strings.TrimSpace(row.String())
 	if result != "|1| 2 |2| juan |3| 54" {
@@ -19,16 +18,16 @@ func (s *tableSuite) TestGetRowById() {
 	}
 }
 func (s *tableSuite) TestGetRows() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	count := len(tb.GetRows())
 	if count != 4 {
 		s.Fail("Expected 4 Rows", fmt.Sprintf("Recibe: %d", count))
 	}
 }
 func (s *tableSuite) TestAddValue() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	_ = tb.AddValue("name", "test")
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
 	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| null", id) {
@@ -37,9 +36,9 @@ func (s *tableSuite) TestAddValue() {
 
 }
 func (s *tableSuite) TestAddValues() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	tb.AddValues("test", "20")
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	id, index := getIdAndIndex(rows)
 	if rows[index].String() != fmt.Sprintf("|1| %s |2| test |3| 20", id) {
@@ -47,35 +46,35 @@ func (s *tableSuite) TestAddValues() {
 	}
 }
 func (s *tableSuite) TestUpdateTableName() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	tb.UpdateTableName("Test")
-	tb = utilities.Must(s.db.GetTableByName("Test"))
+	tb, _ = s.db.GetTableByName("Test")
 	if tb.GetName() != "-----Test-----" {
 		s.Fail("Expected Test Table", fmt.Sprintf("Recibe: %s", tb))
 	}
 }
 func (s *tableSuite) TestUpdateColumnName() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	_ = tb.UpdateColumnName("name", "username")
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	columns := strings.TrimSpace(strings.Join(tb.GetColumns(), " "))
 	if columns != "[1] id [2] username [3] age" {
 		s.Fail("Expected [1] id [2] username |3| age ", fmt.Sprintf("Recibe: %s", columns))
 	}
 }
 func (s *tableSuite) TestUpdateValue() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	_ = tb.UpdateValue("age", "2", "30")
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	if rows[1].String() != "|1| 2 |2| juan |3| 30" {
 		s.Fail("Expected |1| 2 |2| juan |3| 30", fmt.Sprintf("Recibe: %s", rows[2]))
 	}
 }
 func (s *tableSuite) TestDeleteRow() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	_ = tb.DeleteRow("1", false)
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	rows := tb.GetRows()
 	if len(rows) != 3 {
 		s.Fail("Expected len of 3", fmt.Sprintf("Recibe: %d", len(rows)))
@@ -86,9 +85,9 @@ func (s *tableSuite) TestDeleteRow() {
 	}
 }
 func (s *tableSuite) TestDeleteColumn() {
-	tb := utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ := s.db.GetTableByName("Users")
 	_ = tb.DeleteColumn("age")
-	tb = utilities.Must(s.db.GetTableByName("Users"))
+	tb, _ = s.db.GetTableByName("Users")
 	columns := strings.TrimSpace(strings.Join(tb.GetColumns(), " "))
 	if columns != "[1] id [2] name" {
 		s.Fail("Expected [1] id [2] name", fmt.Sprintf("Recibe: %s", columns))

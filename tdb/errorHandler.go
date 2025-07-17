@@ -1,4 +1,4 @@
-package utilities
+package tdb
 
 import "log"
 
@@ -6,13 +6,13 @@ type generic interface {
 	[]byte | string | interface{}
 }
 
-func Must[T generic](data T, err error) T {
+func must[T generic](data T, err error) T {
 	if err != nil {
 		log.Fatalln(err)
 	}
 	return data
 }
-func ErrorHandler(err error) {
+func errorHandler(err error) {
 	if err != nil {
 		log.Fatalln(err)
 	}

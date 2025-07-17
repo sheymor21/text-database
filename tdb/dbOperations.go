@@ -3,7 +3,6 @@ package tdb
 import (
 	"errors"
 	"fmt"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"slices"
 	"strings"
@@ -58,19 +57,19 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 
 	dbName = c.DatabaseName
 	if strings.TrimSpace(c.EncryptionKey) != "" {
-		globalEncoderKey = *NewSecureTextEncoder(c.EncryptionKey)
+		globalEncoderKey = *newSecureTextEncoder(c.EncryptionKey)
 		encryptionKeyExist = true
 	}
-	if !utilities.IsFileExist(c.DatabaseName) {
-		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
+	if !isFileExist(c.DatabaseName) {
+		errorHandler(os.WriteFile(c.DatabaseName, []byte{}, 0644))
 		if c.DataConfig == nil {
 			setDefaultData(c)
 		}
 
 	} else {
-		data := string(utilities.Must(os.ReadFile(c.DatabaseName)))
-		if !IsEncode(data) && encryptionKeyExist {
-			EncodeAndSave(data)
+		data := string(must(os.ReadFile(c.DatabaseName)))
+		if !isEncode(data) && encryptionKeyExist {
+			encodeAndSave(data)
 		}
 	}
 
@@ -86,9 +85,9 @@ func (c DbConfig) RemoveEncryption() error {
 		return &NotFoundError{itemName: "Database"}
 	}
 	if strings.TrimSpace(c.EncryptionKey) != "" {
-		data := string(utilities.Must(os.ReadFile(c.DatabaseName)))
-		if IsEncode(data) {
-			DecodeAndSave(data)
+		data := string(must(os.ReadFile(c.DatabaseName)))
+		if isEncode(data) {
+			decodeAndSave(data)
 			return nil
 		}
 	}
@@ -142,9 +141,9 @@ func (d *db) AddForeignKey(key ForeignKey) error {
 		return &NotFoundError{itemName: msg}
 	}
 	if !isTableInDatabase("Links") {
-		data := string(utilities.Must(os.ReadFile(dbName)))
+		data := string(must(os.ReadFile(dbName)))
 		linkAdded := string(linkTableLayout()) + data
-		utilities.ErrorHandler(os.WriteFile(dbName, []byte(linkAdded), 0666))
+		errorHandler(os.WriteFile(dbName, []byte(linkAdded), 0666))
 	}
 
 	linkTb, _ := getTableByName("Links", false)
@@ -165,17 +164,17 @@ func (d *db) AddForeignKeys(keys []ForeignKey) error {
 	return nil
 }
 func (d *db) addTable(table table) Table {
-	data := globalEncoderKey.ReadAndDecode(dbName)
+	data := globalEncoderKey.readAndDecode(dbName)
 	dataByte := []byte(data)
 	raw := tableBuilder(table)
 	dataByte = append(dataByte, []byte(raw)...)
 	if encryptionKeyExist {
-		dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
-		utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
-		return utilities.Must(d.GetTableByName(table.nameRaw))
+		dataEncode := must(globalEncoderKey.Encode(string(dataByte)))
+		errorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
+		return must(d.GetTableByName(table.nameRaw))
 	}
-	utilities.ErrorHandler(os.WriteFile(dbName, dataByte, 0666))
-	return utilities.Must(d.GetTableByName(table.nameRaw))
+	errorHandler(os.WriteFile(dbName, dataByte, 0666))
+	return must(d.GetTableByName(table.nameRaw))
 
 }
 func (d *db) DeleteTable(tableName string) error {
@@ -211,13 +210,13 @@ func getTableByName(tableName string, strConv bool) (table, error) {
 	return table{}, &NotFoundError{itemName: "Table"}
 }
 func getTables(strConv bool) []table {
-	data := globalEncoderKey.ReadAndDecode(dbName)
+	data := globalEncoderKey.readAndDecode(dbName)
 	data = strings.ReplaceAll(data, "\r", "")
 	if strConv {
 		data = strings.ReplaceAll(data, "U+0020", " ")
 	}
 	s := strings.Split(data, "////")
-	sif := utilities.RemoveEmptyIndex(s)
+	sif := removeEmptyIndex(s)
 	tables := make([]table, len(sif))
 	for i, t := range sif {
 		name := getTableName(t)
@@ -380,9 +379,9 @@ func generateStaticData(db db, v DataConfig) {
 }
 func setDefaultData(c DbConfig) {
 	if encryptionKeyExist {
-		EncodeAndSave(string(getLayout()))
+		encodeAndSave(string(getLayout()))
 	} else {
-		utilities.ErrorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
+		errorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
 	}
 }
 func isTableInDatabase(tableName string) bool {
@@ -426,7 +425,7 @@ func validateForeignKey(linkTb table, key ForeignKey) error {
 	linkRows := getRows(linkTb.rawTable)
 	for i := 1; i < len(linkRows); i++ {
 		s := strings.Split(linkRows[i].value, "|")
-		s = utilities.RemoveEmptyIndex(s)
+		s = removeEmptyIndex(s)
 		if strings.TrimSpace(s[3]) == key.TableName &&
 			strings.TrimSpace(s[5]) == key.ColumnName &&
 			strings.TrimSpace(s[7]) == key.ForeignTableName &&

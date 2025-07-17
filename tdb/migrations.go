@@ -2,7 +2,6 @@ package tdb
 
 import (
 	"fmt"
-	"github.com/sheymor21/text-database/tdb/utilities"
 	"os"
 	"sort"
 	"strconv"
@@ -11,27 +10,27 @@ import (
 )
 
 func (c DbConfig) CreateMigration(migrationName string) {
-	path := utilities.Must(os.Getwd())
+	path := must(os.Getwd())
 	migrationPath := path + "/migrations"
 	constructorPath := migrationPath + "/constructor.go"
-	if IsFileNameExist(migrationPath, migrationName) {
+	if isFileNameExist(migrationPath, migrationName) {
 		panic("Migration already exist")
 	}
 	fileRoute := fmt.Sprintf("%s/%s_Migration_%d.go", migrationPath, migrationName, time.Now().Unix())
-	if !utilities.IsFileExist(fileRoute) {
+	if !isFileExist(fileRoute) {
 		code := migrationBuilder(c, migrationName)
-		utilities.ErrorHandler(os.MkdirAll(migrationPath, 0755))
-		utilities.ErrorHandler(os.WriteFile(fileRoute, code, 0755))
-		if !utilities.IsFileExist(constructorPath) {
+		errorHandler(os.MkdirAll(migrationPath, 0755))
+		errorHandler(os.WriteFile(fileRoute, code, 0755))
+		if !isFileExist(constructorPath) {
 			constructorCode := constructorBuilder(migrationName)
-			utilities.ErrorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
+			errorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
 		} else {
 			err := os.Remove(constructorPath)
 			if err != nil {
 				return
 			}
 			constructorCode := constructorBuilder(migrationName)
-			utilities.ErrorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
+			errorHandler(os.WriteFile(constructorPath, constructorCode, 0755))
 
 		}
 	}
@@ -182,7 +181,7 @@ func upperCase(s string) string {
 	return strings.Join(sS, "")
 
 }
-func IsFileNameExist(path string, fileName string) bool {
+func isFileNameExist(path string, fileName string) bool {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		panic(err)
@@ -197,7 +196,7 @@ func IsFileNameExist(path string, fileName string) bool {
 }
 
 func getMigrationsNames() []string {
-	path := utilities.Must(os.Getwd())
+	path := must(os.Getwd())
 	migrationPath := path + "/migrations"
 	entries, err := os.ReadDir(migrationPath)
 	if err != nil {
