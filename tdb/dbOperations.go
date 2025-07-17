@@ -172,6 +172,7 @@ func (d *db) addTable(table table) Table {
 	if encryptionKeyExist {
 		dataEncode := utilities.Must(globalEncoderKey.Encode(string(dataByte)))
 		utilities.ErrorHandler(os.WriteFile(dbName, []byte(dataEncode), 0666))
+		return utilities.Must(d.GetTableByName(table.nameRaw))
 	}
 	utilities.ErrorHandler(os.WriteFile(dbName, dataByte, 0666))
 	return utilities.Must(d.GetTableByName(table.nameRaw))
@@ -202,7 +203,7 @@ func getTableByName(tableName string, strConv bool) (table, error) {
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
 
 	for _, t := range tables {
-		if strings.Contains(t.rawTable, tableNameRaw) {
+		if t.nameRaw == tableNameRaw {
 			return t, nil
 		}
 

@@ -61,20 +61,13 @@ func (t *table) getSimpleName() string {
 	return name
 }
 func (t *table) AddValue(column string, value string) error {
-	tables := getTables(false)
 	s, err := valueBuilder(*t, column, value)
 	if err != nil {
 		return err
 	}
 
 	t.rawTable = strings.Replace(t.rawTable, "!*!", s, 1)
-	for i, t := range tables {
-		if strings.Contains(t.nameRaw, t.nameRaw) {
-			tables[i] = t
-			break
-		}
-	}
-	saveTables(tables)
+	t.save()
 	return nil
 }
 func (t *table) PrintTable() {
@@ -99,75 +92,41 @@ func (t *table) UpdateTableName(newName string) {
 	rawNewName := fmt.Sprintf("-----%s-----", newName)
 	rawNewNameEnd := fmt.Sprintf("-----%s-----", newName+"_End")
 
-	t.nameRaw = rawNewName
 	t.rawTable = strings.Replace(t.rawTable, t.nameRaw, rawNewName, 1)
 	t.rawTable = strings.Replace(t.rawTable, formatName, rawNewNameEnd, 1)
-	tables := getTables(false)
-	for i, t := range tables {
-		if t.nameRaw == t.nameRaw {
-			tables[i].nameRaw = t.nameRaw
-			tables[i] = t
-			break
-		}
-	}
-	saveTables(tables)
+	t.save()
 }
 func (t *table) UpdateColumnName(oldColumnName string, newColumnName string) error {
-	if !slices.Contains(t.columns, oldColumnName) {
+	index := slices.Index(t.columns, oldColumnName)
+	if index == -1 {
 		return &NotFoundError{itemName: "Column"}
 	}
-	tables := getTables(false)
-	for i, c := range t.columns {
-		if c == oldColumnName {
-			t.columns[i] = newColumnName
-			break
-		}
-	}
-
+	t.columns[index] = newColumnName
 	t.rawTable = strings.Replace(t.rawTable, oldColumnName, newColumnName, 1)
-	for i, tb := range tables {
-		if tb.nameRaw == tb.nameRaw {
-			tables[i] = tb
-			break
-		}
-	}
-
-	saveTables(tables)
+	t.save()
 	return nil
 
 }
 func (t *table) UpdateValue(columnName string, id string, newValue string) error {
 
-	if !slices.Contains(t.columns, columnName) {
+	index := slices.Index(t.columns, columnName)
+	if index == -1 {
 		return &NotFoundError{itemName: "Column"}
 	}
-	for i := 3; i < len(t.columns); i += 2 {
-		if strings.TrimSpace(t.columns[i]) == columnName {
-			row, rowErr := t.GetRowById(id)
-			if rowErr != nil {
-				return rowErr
-			}
-			rowSlice := strings.Split(row.value, "|")
-			rowSlice[i+1] = " " + newValue + " "
-			row.value = strings.Join(rowSlice, "|")
-			row.value = strings.Trim(row.value, " ")
-			updateTable, err := updateRow(t.rawTable, id, row.value)
-			if err != nil {
-				return err
-			}
-			t.rawTable = updateTable
-			break
-		}
+	row, rowErr := t.GetRowById(id)
+	if rowErr != nil {
+		return rowErr
 	}
-
-	tables := getTables(false)
-	for i, tb := range tables {
-		if tb.nameRaw == tb.nameRaw {
-			tables[i].rawTable = tb.rawTable
-			break
-		}
+	rowSlice := strings.Split(row.value, "|")
+	rowSlice[index+1] = " " + newValue + " "
+	row.value = strings.Join(rowSlice, "|")
+	row.value = strings.Trim(row.value, " ")
+	updateTable, err := updateRow(t.rawTable, id, row.value)
+	if err != nil {
+		return err
 	}
-	saveTables(tables)
+	t.rawTable = updateTable
+	t.save()
 	return nil
 }
 func (t *table) GetRows() Rows {
@@ -178,7 +137,7 @@ func (t *table) GetRowById(id string) (Row, error) {
 	rows := getRows(t.rawTable)
 	for i, row := range rows {
 		s := strings.Split(row.value, " ")
-		if strings.TrimSpace(s[1]) == id {
+		if s[1] == id {
 			return rows[i], nil
 		}
 	}
@@ -199,35 +158,24 @@ func (t *table) DeleteRow(id string, cascade bool) error {
 	return nil
 }
 func (t *table) DeleteColumn(columnName string) error {
-	if !slices.Contains(t.columns, columnName) {
+	index := slices.Index(t.columns, columnName)
+	if index == -1 {
 		return &NotFoundError{itemName: "Column"}
 	}
-	for n, c := range t.columns {
-		if c == columnName {
-			t.columns = slices.Delete(t.columns, n, n+1)
-			position := fmt.Sprintf("[%d]", n-1)
-			t.columns = slices.Replace(t.columns, n-1, n, position)
-			if n < len(t.columns) {
-				t.columns = slices.Delete(t.columns, n, n+1)
-			} else {
-				t.columns = slices.Delete(t.columns, n-1, n)
-			}
-			rawColumn := strings.Join(t.columns, " ")
-			newTable := strings.Split(t.rawTable, "\n")
-			newTable[2] = rawColumn
-			t.rawTable = strings.Join(newTable, "\n")
-			t.rawTable = deleteColumnData(t.rawTable, n)
-			break
-		}
+	t.columns = slices.Delete(t.columns, index, index+1)
+	position := fmt.Sprintf("[%d]", index-1)
+	t.columns = slices.Replace(t.columns, index-1, index, position)
+	if index < len(t.columns) {
+		t.columns = slices.Delete(t.columns, index, index+1)
+	} else {
+		t.columns = slices.Delete(t.columns, index-1, index)
 	}
-	tables := getTables(false)
-	for i, tb := range tables {
-		if tb.nameRaw == tb.nameRaw {
-			tables[i] = tb
-			break
-		}
-	}
-	saveTables(tables)
+	rawColumn := strings.Join(t.columns, " ")
+	newTable := strings.Split(t.rawTable, "\n")
+	newTable[2] = rawColumn
+	t.rawTable = strings.Join(newTable, "\n")
+	t.rawTable = deleteColumnData(t.rawTable, index)
+	t.save()
 	return nil
 }
 func (t *table) SearchOne(column string, value string) (Row, error) {
@@ -339,15 +287,7 @@ func deleteRow(tb table, id string) (table, error) {
 	rowString := strings.Join(newRow, "\n")
 	tb.rawTable = "\n" + rowString + "\n"
 
-	tables := getTables(false)
-	for i, t := range tables {
-		if t.nameRaw == tb.nameRaw {
-			tables[i] = tb
-			break
-		}
-	}
-
-	saveTables(tables)
+	tb.save()
 	return tb, nil
 
 }
@@ -525,14 +465,7 @@ func addValues(table table, values []string, idGenerate bool) table {
 	}
 	s := valuesBuilder(table.rawTable, rows, idGenerate)
 	table.rawTable = strings.Replace(table.rawTable, "!*!", s, 1)
-	tables := getTables(false)
-	for i, t := range tables {
-		if strings.Contains(t.nameRaw, table.nameRaw) {
-			tables[i] = table
-			break
-		}
-	}
-	saveTables(tables)
+	table.save()
 	return table
 }
 func saveTables(tables []table) {
