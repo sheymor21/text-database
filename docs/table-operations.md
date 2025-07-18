@@ -10,6 +10,7 @@
 ## Table Operations
 
 Database provides multiple ways to manipulate tables. Below are the main operations available.
+Note: Where statements currently only support equality ('=') conditions; other comparison operators are not supported.
 
 ### Creating Tables
 

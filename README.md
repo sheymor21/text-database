@@ -11,7 +11,7 @@ support.
 - **SQL-like queries**: Basic SELECT, INSERT, UPDATE, DELETE operations
 - **Foreign key support**: Define relationships between tables
 - **Encryption**: Optional encryption for data at rest
-- **Migration support**: Database schema versioning
+- **Migration support**: Database schema versioning (Beta)
 
 # Table of contents
 
