@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// CreateMigration generates a new migration file with the specified name.
+// It creates necessary directories and files for the migration, including a constructor file.
+// If a migration with the same name already exists, it panics.
 func (c DbConfig) CreateMigration(migrationName string) {
 	path := must(os.Getwd())
 	migrationPath := path + "/migrations"
@@ -36,6 +39,9 @@ func (c DbConfig) CreateMigration(migrationName string) {
 	}
 }
 
+// migrationBuilder generates the content for a new migration file.
+// It takes database configuration and migration name as parameters and returns
+// the generated migration code as a byte slice.
 func migrationBuilder(c DbConfig, migrationName string) []byte {
 	var builder strings.Builder
 
@@ -75,6 +81,9 @@ func generate%s() {
 	return []byte(builder.String())
 }
 
+// constructorBuilder generates the content for the migration constructor file.
+// It creates a file that contains information about all migrations and their execution order.
+// Returns the generated constructor code as a byte slice.
 func constructorBuilder(migrationName string) []byte {
 	var builder strings.Builder
 	var namesBuilder strings.Builder
@@ -110,6 +119,9 @@ func GenerateMigration() {
 	return []byte(builder.String())
 }
 
+// migrationTableBuilder generates the table definitions for the migration.
+// It processes the database configuration and returns a string containing
+// the table structures and their associated data.
 func migrationTableBuilder(c DbConfig) string {
 	var builder strings.Builder
 	tables := getTables(false)
@@ -135,6 +147,10 @@ func migrationTableBuilder(c DbConfig) string {
 	}`, builder.String())
 	return tableStrF
 }
+
+// migrationColumnBuilder creates a string representation of column definitions.
+// It takes a slice of column definitions and returns them formatted as a string
+// suitable for use in migration files.
 func migrationColumnBuilder(column []string) string {
 	columnNames := make([]string, (len(column)/2)-1)
 	n := 0
@@ -147,6 +163,10 @@ func migrationColumnBuilder(column []string) string {
 	columnStr := fmt.Sprintf("[]string{%s}", slices)
 	return columnStr
 }
+
+// migrationValuesBuilder generates the values section of a migration for a specific table.
+// It takes a table name and data configuration, returning a string containing
+// the formatted values for the migration.
 func migrationValuesBuilder(tableName string, r []DataConfig) string {
 	var builder strings.Builder
 	for _, v := range r {
@@ -163,6 +183,9 @@ func migrationValuesBuilder(tableName string, r []DataConfig) string {
 	dataName := fmt.Sprintf("[]value{%s}", builder.String())
 	return dataName
 }
+
+// stringSliceBuilder converts a slice of strings into a comma-separated string
+// with proper quotation marks for use in migration files.
 func stringSliceBuilder(s []string) string {
 	var builder strings.Builder
 	for i := 0; i < len(s); i++ {
@@ -175,12 +198,17 @@ func stringSliceBuilder(s []string) string {
 	return builder.String()
 }
 
+// upperCase converts the first character of a string to uppercase.
+// It returns the modified string with its first character capitalized.
 func upperCase(s string) string {
 	sS := strings.Split(s, "")
 	sS[0] = strings.ToUpper(sS[0])
 	return strings.Join(sS, "")
 
 }
+
+// isFileNameExist checks if a migration file with the given name exists in the specified path.
+// Returns true if a file with the name exists, false otherwise.
 func isFileNameExist(path string, fileName string) bool {
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -195,6 +223,8 @@ func isFileNameExist(path string, fileName string) bool {
 	return false
 }
 
+// getMigrationsNames retrieves all migration file names from the migrations directory.
+// Returns a sorted slice of migration file names, ordered by their timestamp.
 func getMigrationsNames() []string {
 	path := must(os.Getwd())
 	migrationPath := path + "/migrations"

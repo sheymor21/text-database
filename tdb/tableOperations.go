@@ -9,37 +9,218 @@ import (
 	"strings"
 )
 
+// Table represents the interface for table operations in the database.
+// It provides methods for manipulating and querying table data.
+//
+// Example usage:
+//
+//	// Create a new table
+//	table := db.CreateTable("users", "id", "name", "email")
+//
+//	// Add a new row
+//	table.AddValue("name", "John Doe")
+//	table.AddValue("email", "john@example.com")
+//
+//	// Update a value
+//	table.UpdateValue("name", "user123", "Jane Doe")
+//
+//	// Search for rows
+//	row, _ := table.SearchOne("email", "john@example.com")
 type Table interface {
+	// AddValue adds a single value to the specified column in the table.
+	// Returns an error if the column doesn't exist.
+	//
+	// Example usage:
+	//
+	//	err := table.AddValue("email", "user@example.com")
+	//	if err != nil {
+	//	    fmt.Println("Failed to add value:", err)
+	//	}
 	AddValue(column string, value string) error
+
+	// AddValues adds multiple values to the table in one operation.
+	// Automatically generates IDs for new rows.
+	//
+	// Example usage:
+	//
+	//	// Add multiple values at once
+	//	table.AddValues("John Doe", "john@example.com", "active")
 	AddValues(values ...string)
-	addValuesIdGenerationOff(values []string)
+
+	// UpdateTableName changes the name of the table.
+	//
+	// Example usage:
+	//
+	//	// Rename table from "users" to "customers"
+	//	table.UpdateTableName("customers")
 	UpdateTableName(newName string)
+
+	// UpdateColumnName changes the name of a column.
+	// Returns an error if the column doesn't exist.
+	//
+	// Example usage:
+	//
+	//	err := table.UpdateColumnName("phone", "contact_number")
 	UpdateColumnName(oldColumnName string, newColumnName string) error
+
+	// UpdateValue updates a value in a specific row and column.
+	// Returns an error if the row or column doesn't exist.
+	//
+	// Example usage:
+	//
+	//	err := table.UpdateValue("email", "user123", "new@example.com")
 	UpdateValue(columnName string, id string, newValue string) error
+
+	// DeleteRow removes a row from the table by its ID.
+	// If cascade is true, also deletes related rows in other tables.
+	//
+	// Example usage:
+	//
+	//	// Delete row with cascade
+	//	err := table.DeleteRow("user123", true)
 	DeleteRow(id string, cascade bool) error
+
+	// DeleteColumn removes a column from the table.
+	// Returns an error if the column doesn't exist.
+	//
+	// Example usage:
+	//
+	//	err := table.DeleteColumn("unused_column")
 	DeleteColumn(columnName string) error
+
+	// GetRowById retrieves a specific row from the table using its ID.
+	// Returns the row if found, or an error if the row doesn't exist.
+	//
+	// Example usage:
+	//
+	//	// Get a row by ID
+	//	row, err := table.GetRowById("user_123")
+	//	if err != nil {
+	//	    fmt.Println("Row not found:", err)
+	//	    return
+	//	}
+	//
+	//	// Access row data
+	//	name := row.SearchValue("name")
 	GetRowById(id string) (Row, error)
+
+	// GetRows returns all rows in the table as a Rows collection.
+	//
+	// Example usage:
+	//
+	//	// Get all rows from the table
+	//	rows := table.GetRows()
+	//
+	//	// Print each row
+	//	for _, row := range rows {
+	//	    fmt.Println(row.String())
+	//	}
 	GetRows() Rows
+
+	// GetColumns returns a slice containing all column names in the table.
+	//
+	// Example usage:
+	//
+	//	// Get all column names
+	//	columns := table.GetColumns()
+	//
+	//	// Print column names
+	//	for _, col := range columns {
+	//	    fmt.Println(col)
+	//	}
 	GetColumns() []string
+
+	// PrintTable prints the table contents to standard output.
+	//
+	// Example usage:
+	//
+	//	// Display the entire table
+	//	table.PrintTable()
 	PrintTable()
+
+	// GetName returns the table name.
+	//
+	// Example usage:
+	//
+	//	tableName := table.GetName()
+	//	fmt.Println("Current table:", tableName)
 	GetName() string
+
+	// SearchOne finds the first row where the column matches the value.
+	// Returns an error if no match is found.
+	//
+	// Example usage:
+	//
+	//	// Find user by email
+	//	row, err := table.SearchOne("email", "user@example.com")
 	SearchOne(column string, value string) (Row, error)
+
+	// SearchAll finds all rows where the specified column matches the given value.
+	// Returns a Rows collection containing all matching rows.
+	//
+	// Example usage:
+	//
+	//	// Find all users with status "active"
+	//	activeUsers := table.SearchAll("status", "active")
+	//
+	//	// Find orders from a specific date
+	//	orders := table.SearchAll("order_date", "2025-07-18")
 	SearchAll(column string, value string) Rows
+
+	// SearchByForeignKey finds all related rows in other tables.
+	// Returns an error if no foreign key relationships exist.
+	//
+	// Example usage:
+	//
+	//	// Find all orders for a customer
+	//	related, err := table.SearchByForeignKey("customer_123")
 	SearchByForeignKey(id string) ([]ComplexRow, error)
+
+	// Internal methods used by the package implementation
 	getSimpleName() string
+	addValuesIdGenerationOff(values []string)
 	table() table
 	save()
 }
+
+// Rows represents a collection of Row objects.
+// It provides methods for ordering and manipulating multiple rows.
+//
+// Example usage:
+//
+//	// Get all rows and sort by name
+//	rows := table.GetRows()
+//	rows.OrderByAscend("name")
+//
+//	// Sort by age in descending order
+//	rows.OrderByDescend("age")
 type Rows []Row
+
+// Row represents a single row in a table.
+// It contains the column names and corresponding values.
+//
+// Example usage:
+//
+//	// Get a specific value from a row
+//	row, _ := table.GetRowById("123")
+//	name := row.SearchValue("name")
+//
+//	// Print the row contents
+//	fmt.Println(row.String())
 type Row struct {
 	columns []string
 	value   string
 }
 
+// ComplexRow represents a row with its associated table and related rows.
+// It is used for handling foreign key relationships and complex queries.
 type ComplexRow struct {
 	Table Table
 	Rows  Rows
 }
+
+// table represents the internal structure of a database table.
+// It contains the raw table name, columns, values and the raw table string representation.
 type table struct {
 	nameRaw  string
 	columns  []string
@@ -59,6 +240,10 @@ func (t *table) getSimpleName() string {
 	t.GetName()
 	return name
 }
+
+// AddValue adds a single value to the specified column in the table and updates the raw table representation.
+// It requires the column name and the value to be added as arguments.
+// Returns an error if the column does not exist or if there is an issue during the value addition process.
 func (t *table) AddValue(column string, value string) error {
 	s, err := valueBuilder(*t, column, value)
 	if err != nil {
@@ -69,12 +254,19 @@ func (t *table) AddValue(column string, value string) error {
 	t.save()
 	return nil
 }
+
+// PrintTable prints the raw string representation of the table to the standard output.
 func (t *table) PrintTable() {
 	fmt.Println(t.rawTable)
 }
+
+// GetName returns the raw name of the table as a string.
 func (t *table) GetName() string {
 	return t.nameRaw
 }
+
+// AddValues appends one or more values to the table and updates its internal representation.
+// Each string in the `values` parameter represents a new row of data to be added.
 func (t *table) AddValues(values ...string) {
 	*t = addValues(*t, values, true)
 }
@@ -84,6 +276,14 @@ func (t *table) addValuesIdGenerationOff(values []string) {
 func (t *table) GetColumns() []string {
 	return getColumns(t.rawTable)
 }
+
+// UpdateTableName changes the name of the table to the specified new name.
+// The change is persisted to storage automatically.
+//
+// Example usage:
+//
+//	// Rename a table from "users" to "customers"
+//	table.UpdateTableName("customers")
 func (t *table) UpdateTableName(newName string) {
 	formatName := strings.Replace(t.nameRaw, "-----", "", 2)
 	formatName = formatName + "_End"
@@ -95,6 +295,18 @@ func (t *table) UpdateTableName(newName string) {
 	t.rawTable = strings.Replace(t.rawTable, formatName, rawNewNameEnd, 1)
 	t.save()
 }
+
+// UpdateColumnName changes the name of a column from oldColumnName to newColumnName.
+// Returns an error if the column doesn't exist in the table.
+//
+// Example usage:
+//
+//	// Rename column "phone" to "contact_number"
+//	err := table.UpdateColumnName("phone", "contact_number")
+//
+//	if err != nil {
+//	    fmt.Println("Column not found:", err)
+//	}
 func (t *table) UpdateColumnName(oldColumnName string, newColumnName string) error {
 	index := slices.Index(t.columns, oldColumnName)
 	if index == -1 {
@@ -106,6 +318,17 @@ func (t *table) UpdateColumnName(oldColumnName string, newColumnName string) err
 	return nil
 
 }
+
+// UpdateValue updates a value in a specific row and column of the table.
+// Returns an error if either the column or row doesn't exist.
+//
+// Example usage:
+//
+//	// Update email address for user with ID "123"
+//	err := table.UpdateValue("email", "123", "newemail@example.com")
+//
+//	// Update status of an order
+//	err := table.UpdateValue("status", "order_456", "shipped")
 func (t *table) UpdateValue(columnName string, id string, newValue string) error {
 
 	index := slices.Index(t.columns, columnName)
@@ -142,6 +365,18 @@ func (t *table) GetRowById(id string) (Row, error) {
 	}
 	return Row{}, &NotFoundError{itemName: "Row"}
 }
+
+// DeleteRow removes a row from the table by its ID.
+// If cascade is true, it also deletes any related rows in other tables that reference this row.
+// Returns an error if the row doesn't exist or if there's an issue with cascade deletion.
+//
+// Example usage:
+//
+//	// Delete a single row
+//	err := table.DeleteRow("123", false)
+//
+//	// Delete a row and its related records
+//	err := table.DeleteRow("456", true)
 func (t *table) DeleteRow(id string, cascade bool) error {
 	newTable, err := deleteRow(*t, id)
 	if err != nil {
@@ -246,6 +481,8 @@ func (r *Rows) String() string {
 	s := make([]string, len(*r))
 	return strings.Join(s, "\n")
 }
+
+// OrderByAscend sorts the rows in ascending order based on the specified column.
 func (r *Rows) OrderByAscend(column string) error {
 	order, err := orderBy(*r, column, true)
 	if err != nil {
@@ -254,6 +491,8 @@ func (r *Rows) OrderByAscend(column string) error {
 	*r = order
 	return err
 }
+
+// OrderByDescend sorts the rows in descending order based on the specified column.
 func (r *Rows) OrderByDescend(column string) error {
 	order, err := orderBy(*r, column, false)
 	if err != nil {
@@ -262,6 +501,8 @@ func (r *Rows) OrderByDescend(column string) error {
 	*r = order
 	return nil
 }
+
+// SearchValue retrieves the value for the specified column in the row.
 func (r *Row) SearchValue(column string) string {
 	index := slices.Index(r.columns, column)
 	if index == -1 {
@@ -274,6 +515,8 @@ func (r *Row) String() string {
 	return r.value
 }
 
+// deleteRow removes a row from the table by its ID and returns the updated table.
+// Returns an error if the row is not found.
 func deleteRow(tb table, id string) (table, error) {
 	row, err := tb.GetRowById(id)
 	if err != nil {
@@ -290,6 +533,9 @@ func deleteRow(tb table, id string) (table, error) {
 	return tb, nil
 
 }
+
+// removeStrConv converts special space characters back to normal spaces in row values.
+// This is used when retrieving data that was stored with encoded spaces.
 func removeStrConv(r Rows) Rows {
 	for i := 0; i < len(r); i++ {
 		value := strings.ReplaceAll(r[i].value, "U+0020", " ")
@@ -297,6 +543,9 @@ func removeStrConv(r Rows) Rows {
 	}
 	return r
 }
+
+// searchAll finds all rows in the table where the specified column matches the given value.
+// Returns an empty Rows collection if no matches are found.
 func searchAll(tb table, column string, value string) Rows {
 	var rowsResult Rows
 	for _, row := range tb.values {
@@ -307,6 +556,9 @@ func searchAll(tb table, column string, value string) Rows {
 	}
 	return rowsResult
 }
+
+// getTableForeignKey retrieves all foreign key relationships for the given table.
+// Returns an error if no foreign keys are found.
 func getTableForeignKey(tb table) ([]foreignKey, error) {
 	if !isForeignKeyAvailable(tb.getSimpleName()) {
 		return nil, &NotFoundError{itemName: "ForeignKey"}
@@ -399,6 +651,9 @@ func updateRow(table string, id string, newRow string) (string, error) {
 	}
 	return strings.Join(row, "\n"), nil
 }
+
+// valueBuilder constructs a new row value string for the table.
+// It handles ID generation and space encoding for the new value.
 func valueBuilder(table table, columnName string, value string) (string, error) {
 	co := getColumns(table.rawTable)
 	co = removeEmptyIndex(co)
@@ -426,6 +681,9 @@ func valueBuilder(table table, columnName string, value string) (string, error) 
 	result := union + "\n!*!"
 	return result, nil
 }
+
+// valuesBuilder constructs multiple row value strings for the table.
+// If idGenerate is true, it will generate new UUIDs for the rows.
 func valuesBuilder(table string, values []Row, idGenerate bool) string {
 	co := getColumns(table)
 	co = removeEmptyIndex(co)
@@ -467,6 +725,9 @@ func addValues(table table, values []string, idGenerate bool) table {
 	table.save()
 	return table
 }
+
+// saveTables writes the tables to the database file.
+// If encryption is enabled, the data will be encrypted before saving.
 func saveTables(tables []table) {
 	var newTable string
 	if len(tables) != 0 {

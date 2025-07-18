@@ -9,42 +9,139 @@ import (
 	"sync"
 )
 
+// Db interface defines the contract for database operations including table management and SQL queries
 type Db interface {
+
+	// GetName returns the name of the database file
+	//
+	// Example:
+	//  dbName := db.GetName()
+	//  fmt.Printf("Working with database: %s\n", dbName)
 	GetName() string
+
+	// GetTables returns all tables currently in the database
+	//
+	// Example:
+	//  tables := db.GetTables()
+	//  for _, table := range tables {
+	//      fmt.Printf("Found table: %s\n", table.GetName())
+	//  }
 	GetTables() []Table
+
+	// GetTableByName retrieves a specific table by its name
+	// Returns error if table doesn't exist
+	//
+	// Example:
+	//  table, err := db.GetTableByName("users")
+	//  if err != nil {
+	//      log.Fatal("Table not found:", err)
+	//  }
 	GetTableByName(name string) (Table, error)
+
+	// PrintTables displays all tables and their contents to standard output
+	//
+	// Example:
+	//  db.PrintTables()
 	PrintTables()
+
+	// NewTable creates a new table with specified name and columns
+	// Returns the newly created table
+	//
+	// Example:
+	//  columns := []string{"id", "name", "email"}
+	//  usersTable := db.NewTable("users", columns)
 	NewTable(name string, columns []string) Table
+
+	// DeleteTable removes a table from the database
+	// Returns error if table doesn't exist
+	//
+	// Example:
+	//  err := db.DeleteTable("temporary_table")
+	//  if err != nil {
+	//      log.Fatal("Failed to delete table:", err)
+	//  }
 	DeleteTable(tableName string) error
+
+	// AddForeignKey creates a foreign key relationship between two tables
+	// Returns error if tables or columns don't exist
+	//
+	// Example:
+	//  fk := ForeignKey{
+	//      TableName: "orders",
+	//      ColumnName: "user_id",
+	//      ForeignTableName: "users",
+	//      ForeignColumnName: "id",
+	//  }
+	//  err := db.AddForeignKey(fk)
 	AddForeignKey(key ForeignKey) error
+
+	// AddForeignKeys adds multiple foreign key relationships at once
+	// Returns error if any operation fails
+	//
+	// Example:
+	//  fks := []ForeignKey{
+	//      {TableName: "orders", ColumnName: "user_id", ForeignTableName: "users", ForeignColumnName: "id"},
+	//      {TableName: "orders", ColumnName: "product_id", ForeignTableName: "products", ForeignColumnName: "id"},
+	//  }
+	//  err := db.AddForeignKeys(fks)
 	AddForeignKeys(keys []ForeignKey) error
+
+	// FromSql executes an SQL query and returns the results
+	// Returns error if query is invalid or execution fails
+	//
+	// Example:
+	//  rows, err := db.FromSql("SELECT * FROM users WHERE age > 18")
+	//  if err != nil {
+	//      log.Fatal("Query failed:", err)
+	//  }
 	FromSql(sql string) (SqlRows, error)
 }
 type db struct {
 	name   string
 	tables []table
 }
+
+// DataConfig defines the structure for configuring table data with columns and values
 type DataConfig struct {
-	TableName string
-	Columns   []string
-	Values    []Values
+	TableName string   // Name of the table
+	Columns   []string // List of column names
+	Values    []Values // List of row values
 }
+
+// Values represents a row of data as string values
 type Values []string
+
+// DbConfig defines the configuration for creating a new database
 type DbConfig struct {
-	EncryptionKey string
-	DatabaseName  string
-	DataConfig    []DataConfig
+	EncryptionKey string       // Optional encryption key for database content
+	DatabaseName  string       // Name of the database file
+	DataConfig    []DataConfig // Initial data configuration for tables
 }
+
+// ForeignKey defines a relationship between two tables through their columns
 type ForeignKey struct {
-	TableName         string
-	ColumnName        string
-	ForeignTableName  string
-	ForeignColumnName string
+	TableName         string // Name of the source table
+	ColumnName        string // Name of the source column
+	ForeignTableName  string // Name of the referenced table
+	ForeignColumnName string // Name of the referenced column
 }
 
 var encryptionKeyExist bool
 var dbName string
 
+// CreateDatabase creates a new database instance with the specified configuration
+// Returns a database interface and any error encountered during creation
+//
+// Example:
+//
+//	config := DbConfig{
+//		DatabaseName: "mydb.txt",
+//		EncryptionKey: "secret",
+//	}
+//	db, err := config.CreateDatabase()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (c DbConfig) CreateDatabase() (Db, error) {
 	checkDataErr := checkDataConfig(c.DataConfig)
 	if checkDataErr != nil {
@@ -80,6 +177,20 @@ func (c DbConfig) CreateDatabase() (Db, error) {
 
 	return &db{name: c.DatabaseName, tables: getTables(true)}, nil
 }
+
+// RemoveEncryption removes encryption from an encrypted database using the provided encryption key
+// Returns an error if the database is not found or encryption key is invalid
+//
+// Example:
+//
+//	config := DbConfig{
+//		DatabaseName: "mydb.txt",
+//		EncryptionKey: "secret",
+//	}
+//	err := config.RemoveEncryption()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (c DbConfig) RemoveEncryption() error {
 	if dbName == "" {
 		return &NotFoundError{itemName: "Database"}
@@ -93,9 +204,25 @@ func (c DbConfig) RemoveEncryption() error {
 	}
 	return &NotFoundError{itemName: "EncryptionKey"}
 }
+
+// GetName returns the name of the database
+//
+// Example:
+//
+//	name := db.GetName()
+//	fmt.Println("Database name:", name)
 func (d *db) GetName() string {
 	return dbName
 }
+
+// GetTables returns a list of all tables in the database
+//
+// Example:
+//
+//	tables := db.GetTables()
+//	for _, table := range tables {
+//		fmt.Println("Table:", table.GetName())
+//	}
 func (d *db) GetTables() []Table {
 	tables := getTables(true)
 	iTables := make([]Table, len(tables))
@@ -104,21 +231,61 @@ func (d *db) GetTables() []Table {
 	}
 	return iTables
 }
+
+// PrintTables prints all tables in the database to standard output
+//
+// Example:
+//
+//	db.PrintTables()
 func (d *db) PrintTables() {
 	tables := getTables(true)
 	for _, t := range tables {
 		fmt.Println(t.rawTable)
 	}
 }
+
+// NewTable creates a new table with the specified name and columns
+// Returns the created table interface
+//
+// Example:
+//
+//	columns := []string{"id", "name", "age"}
+//	table := db.NewTable("users", columns)
 func (d *db) NewTable(name string, columns []string) Table {
 	t := &table{name, columns, nil, ""}
 	tb := d.addTable(*t)
 	return tb
 }
+
+// GetTableByName retrieves a table by its name
+// Returns the table and an error if the table is not found
+//
+// Example:
+//
+//	table, err := db.GetTableByName("users")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (d *db) GetTableByName(name string) (Table, error) {
 	tb, err := getTableByName(name, true)
 	return &tb, err
 }
+
+// AddForeignKey adds a foreign key relationship between two tables
+// Returns an error if the tables or columns don't exist
+//
+// Example:
+//
+//	key := ForeignKey{
+//		TableName: "orders",
+//		ColumnName: "user_id",
+//		ForeignTableName: "users",
+//		ForeignColumnName: "id",
+//	}
+//	err := db.AddForeignKey(key)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (d *db) AddForeignKey(key ForeignKey) error {
 	tb, errTb := getTableByName(key.TableName, false)
 	if errTb != nil {
@@ -154,6 +321,20 @@ func (d *db) AddForeignKey(key ForeignKey) error {
 	linkTb.AddValues(key.TableName, key.ColumnName, key.ForeignTableName, key.ForeignColumnName)
 	return nil
 }
+
+// AddForeignKeys adds multiple foreign key relationships
+// Returns an error if any of the foreign key operations fail
+//
+// Example:
+//
+//	keys := []ForeignKey{
+//		{TableName: "orders", ColumnName: "user_id", ForeignTableName: "users", ForeignColumnName: "id"},
+//		{TableName: "items", ColumnName: "order_id", ForeignTableName: "orders", ForeignColumnName: "id"},
+//	}
+//	err := db.AddForeignKeys(keys)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (d *db) AddForeignKeys(keys []ForeignKey) error {
 	for _, key := range keys {
 		err := d.AddForeignKey(key)
@@ -177,6 +358,16 @@ func (d *db) addTable(table table) Table {
 	return must(d.GetTableByName(table.nameRaw))
 
 }
+
+// DeleteTable removes a table from the database by its name
+// Returns an error if the table is not found
+//
+// Example:
+//
+//	err := db.DeleteTable("users")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (d *db) DeleteTable(tableName string) error {
 	tables := getTables(true)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
@@ -194,9 +385,24 @@ func (d *db) DeleteTable(tableName string) error {
 	saveTables(tables)
 	return nil
 }
+
+// FromSql executes an SQL query and returns the results
+// Returns the query results and any error encountered during execution
+//
+// Example:
+//
+//	rows, err := db.FromSql("SELECT * FROM users WHERE age = 18")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func (d *db) FromSql(sql string) (SqlRows, error) {
 	return validateSql(*d, sql)
 }
+
+// getTableByName retrieves a table by its name from the database
+// tableName: name of the table to retrieve
+// strConv: flag to indicate if string conversion should be applied
+// Returns the found table and any error encountered
 func getTableByName(tableName string, strConv bool) (table, error) {
 	tables := getTables(strConv)
 	tableNameRaw := fmt.Sprintf("-----%s-----", tableName)
@@ -209,6 +415,10 @@ func getTableByName(tableName string, strConv bool) (table, error) {
 	}
 	return table{}, &NotFoundError{itemName: "Table"}
 }
+
+// getTables retrieves all tables from the database
+// strConv: flag to indicate if string conversion should be applied
+// Returns a slice of all tables in the database
 func getTables(strConv bool) []table {
 	data := globalEncoderKey.readAndDecode(dbName)
 	data = strings.ReplaceAll(data, "\r", "")
@@ -225,6 +435,10 @@ func getTables(strConv bool) []table {
 	}
 	return tables
 }
+
+// tableBuilder constructs a string representation of a table
+// table: the table structure to build
+// Returns the string representation of the table
 func tableBuilder(table table) string {
 	if table.columns[0] != "id" {
 		slices.Reverse(table.columns)
@@ -246,6 +460,10 @@ func tableBuilder(table table) string {
 	}
 	return tableRaw
 }
+
+// columnsBuilder creates a formatted string of column definitions
+// columns: slice of column names
+// Returns a formatted string representing the columns
 func columnsBuilder(columns []string) string {
 
 	if len(columns) == 0 {
@@ -260,6 +478,10 @@ func columnsBuilder(columns []string) string {
 
 	return strings.TrimSpace(stringBuilder.String())
 }
+
+// addTableFrontiers adds boundary markers between tables
+// tables: slice of tables to process
+// Returns a string with table boundaries added
 func addTableFrontiers(tables []table) string {
 	rawTables := make([]string, len(tables))
 	rawTables[0] = "////"
@@ -291,6 +513,10 @@ func getRows(table string) []Row {
 	}
 	return newRow
 }
+
+// validateDatabaseName checks if the database name is valid
+// name: database name to validate
+// Returns an error if the name is invalid
 func validateDatabaseName(name string) error {
 	if strings.TrimSpace(name) == "" {
 		return errors.New("database name is required")
@@ -331,6 +557,10 @@ func checkDataConfig(d []DataConfig) error {
 	}
 	return nil
 }
+
+// validateDataRequirement checks if the data configuration meets requirements
+// d: data configuration to validate
+// Returns an error if requirements are not met
 func validateDataRequirement(d DataConfig) error {
 	for _, v := range d.Values {
 
@@ -361,6 +591,10 @@ func addData(db db, d []DataConfig) {
 		}
 	}
 }
+
+// addStaticData adds predefined data to an existing table
+// db: database instance
+// v: data configuration containing the values to add
 func addStaticData(db db, v DataConfig) {
 	tb, _ := db.GetTableByName(v.TableName)
 	for _, iv := range v.Values {
@@ -369,6 +603,10 @@ func addStaticData(db db, v DataConfig) {
 		}
 	}
 }
+
+// generateStaticData creates a new table with predefined data
+// db: database instance
+// v: data configuration for table creation and data
 func generateStaticData(db db, v DataConfig) {
 	tb := db.NewTable(v.TableName, v.Columns)
 	if v.Values != nil || len(v.Values) != 0 {
@@ -377,6 +615,9 @@ func generateStaticData(db db, v DataConfig) {
 		}
 	}
 }
+
+// setDefaultData initializes the database with default data structure
+// c: database configuration
 func setDefaultData(c DbConfig) {
 	if encryptionKeyExist {
 		encodeAndSave(string(getLayout()))
@@ -384,6 +625,10 @@ func setDefaultData(c DbConfig) {
 		errorHandler(os.WriteFile(c.DatabaseName, getLayout(), 0644))
 	}
 }
+
+// isTableInDatabase checks if a table exists in the database
+// tableName: name of the table to check
+// Returns true if table exists, false otherwise
 func isTableInDatabase(tableName string) bool {
 	_, err := getTableByName(tableName, false)
 	if err != nil {
@@ -391,6 +636,11 @@ func isTableInDatabase(tableName string) bool {
 	}
 	return true
 }
+
+// areValuesInDatabase checks if specific values exist in a table
+// tableName: name of the table to check
+// value: value to search for
+// Returns true if values exist, false otherwise
 func areValuesInDatabase(tableName string, value string) bool {
 
 	tb, err := getTableByName(tableName, false)
@@ -403,6 +653,10 @@ func areValuesInDatabase(tableName string, value string) bool {
 	}
 	return true
 }
+
+// setDatabaseData initializes database with configured data
+// c: database configuration containing initial data
+// Returns initialized database instance
 func setDatabaseData(c DbConfig) db {
 	newDb := db{name: c.DatabaseName, tables: getTables(true)}
 	addData(newDb, c.DataConfig)
@@ -421,6 +675,11 @@ func getLayout() []byte {
 ////`
 	return []byte(layout)
 }
+
+// validateForeignKey checks if a foreign key relationship is valid
+// linkTb: link table containing relationships
+// key: foreign key relationship to validate
+// Returns error if relationship is invalid or already exists
 func validateForeignKey(linkTb table, key ForeignKey) error {
 	linkRows := getRows(linkTb.rawTable)
 	for i := 1; i < len(linkRows); i++ {

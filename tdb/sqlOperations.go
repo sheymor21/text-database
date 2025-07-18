@@ -12,6 +12,8 @@ type SqlRows struct {
 	Rows       Rows
 }
 
+// validateSql validates and processes SQL queries, returning the query results and any errors.
+// It supports SELECT, UPDATE, DELETE, INSERT, and DROP operations.
 func validateSql(d db, sql string) (SqlRows, error) {
 	sql = strings.ReplaceAll(sql, ",", " ")
 	sql = strings.ReplaceAll(sql, "(", " ")
@@ -53,6 +55,8 @@ func validateSql(d db, sql string) (SqlRows, error) {
 		return SqlRows{}, &SqlSyntaxError{itemName: "sql option"}
 	}
 }
+
+// sqlDrop handles DROP table operations by deleting the specified table from the database.
 func sqlDrop(d db, sqlS []string) error {
 	tableName := sqlS[2]
 	err := d.DeleteTable(tableName)
@@ -61,6 +65,9 @@ func sqlDrop(d db, sqlS []string) error {
 	}
 	return nil
 }
+
+// sqlSelect processes SELECT queries by extracting data from specified tables and applying
+// any WHERE conditions to filter the results.
 func sqlSelect(sqlS []string) SqlRows {
 	index := slices.Index(sqlS, "FROM")
 	tableName := sqlS[index+1]
@@ -94,6 +101,9 @@ func sqlSelect(sqlS []string) SqlRows {
 	}
 	return *sqlRows
 }
+
+// sqlWhere extracts and processes WHERE clause parameters from SQL queries.
+// Returns nil if no WHERE clause is present.
 func sqlWhere(sqlS []string) []string {
 	index := slices.Index(sqlS, "WHERE")
 	if index == -1 {
@@ -103,6 +113,9 @@ func sqlWhere(sqlS []string) []string {
 	params = fixSqlParams(params)
 	return params
 }
+
+// sqlUpdate processes UPDATE queries by modifying specified rows in the target table
+// based on WHERE conditions and SET values.
 func sqlUpdate(sqlS []string) (SqlRows, error) {
 	updateIndex := slices.Index(sqlS, "UPDATE")
 	tableName := sqlS[updateIndex+1]
@@ -131,6 +144,9 @@ func sqlUpdate(sqlS []string) (SqlRows, error) {
 	}, nil
 
 }
+
+// sqlDelete processes DELETE queries by removing rows from the specified table
+// based on WHERE conditions.
 func sqlDelete(sqlS []string) (SqlRows, error) {
 	fromIndex := slices.Index(sqlS, "FROM")
 	tableName := sqlS[fromIndex+1]
@@ -149,6 +165,9 @@ func sqlDelete(sqlS []string) (SqlRows, error) {
 		Rows:       nil,
 	}, nil
 }
+
+// sqlInsert processes INSERT queries by adding new rows to the specified table
+// with the provided column values.
 func sqlInsert(sqlS []string) (SqlRows, error) {
 	insertIndex := slices.Index(sqlS, "INSERT")
 	tableName := sqlS[insertIndex+2]
@@ -176,6 +195,9 @@ func sqlInsert(sqlS []string) (SqlRows, error) {
 		Rows:       nil,
 	}, nil
 }
+
+// divideEachNewRow splits a slice of values into multiple rows based on the number
+// of columns specified.
 func divideEachNewRow(columns int, values []string) [][]string {
 	if columns == len(values) {
 		return [][]string{values}
@@ -196,6 +218,9 @@ func divideEachNewRow(columns int, values []string) [][]string {
 	}
 	return *a
 }
+
+// fixSqlParams processes SQL parameters in parallel, replacing comparative symbols
+// and formatting the parameters for query execution.
 func fixSqlParams(params []string) []string {
 	var wg sync.WaitGroup
 	ch := make(chan []string)
@@ -219,6 +244,9 @@ func fixSqlParams(params []string) []string {
 	close(ch)
 	return checkedParams
 }
+
+// replaceComparativeSymbol identifies and separates comparative symbols (=, >, <, >=, <=)
+// from the input string, returning the split components.
 func replaceComparativeSymbol(value string) []string {
 	symbols := []string{"=", ">", "<", ">=", "<="}
 	for _, s := range symbols {
@@ -235,6 +263,9 @@ func replaceComparativeSymbol(value string) []string {
 	}
 	return nil
 }
+
+// getSqlColumns extracts column names from SQL queries, handling both explicit column
+// lists and wildcard (*) selections.
 func getSqlColumns(tb table, sqlS []string) []string {
 	fromIndex := slices.Index(sqlS, "FROM")
 
@@ -252,6 +283,9 @@ func getSqlColumns(tb table, sqlS []string) []string {
 	}
 	return columns
 }
+
+// valuesBuilderSql constructs Row objects from SQL column names and their corresponding
+// values, formatting them according to the table structure.
 func valuesBuilderSql(sqlColumns []string, sqlValues []string) Rows {
 	columns := columnsBuilder(sqlColumns)
 	columnsS := strings.Split(columns, " ")

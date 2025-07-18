@@ -18,6 +18,8 @@ type secureTextEncoder struct {
 
 var globalEncoderKey secureTextEncoder
 
+// newSecureTextEncoder creates a new secureTextEncoder instance with the provided secret key.
+// The secret key is hashed using SHA-256 to create the encryption key.
 func newSecureTextEncoder(secretKey string) *secureTextEncoder {
 	hasher := sha256.New()
 	hasher.Write([]byte(secretKey))
@@ -28,6 +30,8 @@ func newSecureTextEncoder(secretKey string) *secureTextEncoder {
 	}
 }
 
+// Encode encrypts the plain text using AES-GCM encryption and returns the base64-encoded result
+// with "ENG" prefix. Returns error if encryption fails.
 func (e *secureTextEncoder) Encode(plainText string) (string, error) {
 	// Create cipher block
 	block, err := aes.NewCipher(e.key)
@@ -59,6 +63,8 @@ func (e *secureTextEncoder) Encode(plainText string) (string, error) {
 
 }
 
+// Decode decrypts the encoded text (with "ENG" prefix removed) using AES-GCM decryption.
+// Returns the original plain text or error if decryption fails.
 func (e *secureTextEncoder) Decode(encodedText string) (string, error) {
 	encodedText = strings.Replace(encodedText, "ENG", "", 1)
 	ciphertext, err := base64.StdEncoding.DecodeString(encodedText)
@@ -89,6 +95,9 @@ func (e *secureTextEncoder) Decode(encodedText string) (string, error) {
 
 	return string(plaintext), nil
 }
+
+// readAndDecode reads the content of the database file and decodes it if encryption is enabled.
+// Returns the decoded content as a string.
 func (e *secureTextEncoder) readAndDecode(dbName string) string {
 	data := string(must(os.ReadFile(dbName)))
 	if encryptionKeyExist {
@@ -97,6 +106,8 @@ func (e *secureTextEncoder) readAndDecode(dbName string) string {
 	return data
 }
 
+// isEncode checks if the given text is encoded by verifying if it starts with "ENG" prefix.
+// Returns true if the text is encoded, false otherwise.
 func isEncode(text string) bool {
 	if strings.HasPrefix(text, "ENG") {
 		return true
@@ -104,11 +115,15 @@ func isEncode(text string) bool {
 	return false
 }
 
+// encodeAndSave encrypts the provided data using the global encoder key and saves it to the database file.
+// Panics if encryption or file writing fails.
 func encodeAndSave(data string) {
 	encodeData := must(globalEncoderKey.Encode(data))
 	errorHandler(os.WriteFile(dbName, []byte(encodeData), 0644))
 }
 
+// decodeAndSave decrypts the provided data using the global encoder key and saves it to the database file.
+// Panics if decryption or file writing fails.
 func decodeAndSave(data string) {
 	decodeData := must(globalEncoderKey.Decode(data))
 	errorHandler(os.WriteFile(dbName, []byte(decodeData), 0644))
